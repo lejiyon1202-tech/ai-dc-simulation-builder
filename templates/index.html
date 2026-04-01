@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Simulation Builder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        .header { background: linear-gradient(135deg, #1e293b, #334155); padding: 20px 40px; border-bottom: 1px solid #475569; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 24px; color: #38bdf8; }
+        .header .subtitle { color: #94a3b8; font-size: 14px; }
+
+        .progress-bar { background: #1e293b; padding: 15px 40px; border-bottom: 1px solid #334155; }
+        .steps { display: flex; gap: 0; justify-content: center; }
+        .step { display: flex; align-items: center; gap: 8px; padding: 8px 16px; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s; }
+        .step:hover { background: #334155; }
+        .step.active { background: #1d4ed8; color: white; }
+        .step.done { color: #4ade80; }
+        .step .num { width: 24px; height: 24px; border-radius: 50%; background: #475569; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .step.active .num { background: #60a5fa; }
+        .step.done .num { background: #22c55e; }
+        .step-arrow { color: #475569; margin: 0 4px; }
+
+        .main { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .section-title { font-size: 20px; margin-bottom: 8px; color: #f1f5f9; }
+        .section-desc { color: #94a3b8; margin-bottom: 20px; font-size: 14px; }
+
+        .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .option-card { background: #1e293b; border: 2px solid #334155; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 14px; position: relative; }
+        .option-card:hover { border-color: #60a5fa; background: #1e3a5f; }
+        .option-card.selected { border-color: #3b82f6; background: #1e3a8a; box-shadow: 0 0 12px rgba(59, 130, 246, 0.3); }
+        .option-card .icon { font-size: 24px; margin-bottom: 6px; }
+        .option-card .purpose-effect { font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.4; }
+
+        .category-group { margin-bottom: 20px; }
+        .category-label { font-size: 13px; color: #60a5fa; margin-bottom: 8px; font-weight: 600; padding-left: 4px; }
+
+        /* 역량 - 툴팁 */
+        .competency-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+        .comp-chip { background: #1e293b; border: 1px solid #475569; border-radius: 20px; padding: 8px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; text-align: center; position: relative; }
+        .comp-chip:hover { border-color: #60a5fa; }
+        .comp-chip.selected { background: #1e3a8a; border-color: #3b82f6; color: #93c5fd; }
+        .comp-count { text-align: right; font-size: 13px; color: #94a3b8; margin-top: 8px; }
+
+        .tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #334155; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; width: 260px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.4); text-align: left; pointer-events: none; }
+        .tooltip::after { content:''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #334155; }
+        .comp-chip:hover .tooltip { display: block; }
+
+        /* 기법 카드 */
+        .method-section { margin-bottom: 24px; }
+        .method-section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; padding: 8px 12px; border-radius: 6px; }
+        .method-section-title.recommended { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+        .method-section-title.other { color: #94a3b8; background: rgba(148, 163, 184, 0.1); }
+
+        .method-card { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 12px; transition: all 0.2s; }
+        .method-card.selected { border-color: #3b82f6; }
+        .method-card.recommended-card { border-color: #22c55e44; }
+        .method-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+        .method-header input[type="checkbox"] { width: 20px; height: 20px; accent-color: #3b82f6; }
+        .method-header .name { font-size: 16px; font-weight: 600; }
+        .method-desc { color: #94a3b8; font-size: 13px; padding-left: 32px; margin-bottom: 12px; }
+        .method-match { color: #4ade80; font-size: 12px; padding-left: 32px; margin-bottom: 8px; }
+        .method-settings { display: flex; gap: 20px; padding-left: 32px; flex-wrap: wrap; }
+        .method-settings label { font-size: 13px; color: #94a3b8; }
+        .method-settings input, .method-settings select { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 6px 10px; border-radius: 6px; width: 80px; margin-left: 6px; }
+
+        /* 버튼 */
+        .btn-group { display: flex; justify-content: space-between; margin-top: 30px; }
+        .btn { padding: 12px 28px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-prev { background: #334155; color: #e2e8f0; }
+        .btn-prev:hover { background: #475569; }
+        .btn-next { background: #2563eb; color: white; }
+        .btn-next:hover { background: #1d4ed8; }
+        .btn-generate { background: linear-gradient(135deg, #059669, #10b981); color: white; padding: 16px 40px; font-size: 17px; }
+        .btn-generate:hover { background: linear-gradient(135deg, #047857, #059669); }
+
+        /* 로딩 */
+        .loading { text-align: center; padding: 60px; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #334155; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 결과 - 문서 형태 */
+        .doc-viewer { background: #ffffff; color: #1a1a1a; border-radius: 8px; padding: 48px 56px; max-height: 700px; overflow-y: auto; font-family: 'Batang', 'Times New Roman', serif; font-size: 15px; line-height: 1.9; box-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+        .doc-viewer h1 { font-size: 22px; color: #111; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 24px 0 16px; font-family: 'Malgun Gothic', sans-serif; }
+        .doc-viewer h2 { font-size: 18px; color: #1a3a6a; margin: 20px 0 10px; font-family: 'Malgun Gothic', sans-serif; border-left: 4px solid #2563eb; padding-left: 12px; }
+        .doc-viewer h3 { font-size: 15px; color: #333; margin: 16px 0 8px; font-family: 'Malgun Gothic', sans-serif; background: #f0f4f8; padding: 6px 10px; border-radius: 4px; }
+        .doc-viewer table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .doc-viewer th { background: #e8edf2; padding: 8px 12px; border: 1px solid #ccc; text-align: left; font-family: 'Malgun Gothic', sans-serif; }
+        .doc-viewer td { padding: 8px 12px; border: 1px solid #ddd; vertical-align: top; }
+        .doc-viewer .urgency-high { color: #dc2626; font-weight: bold; }
+        .doc-viewer .urgency-mid { color: #d97706; }
+        .doc-viewer .urgency-low { color: #16a34a; }
+        .doc-viewer .doc-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
+        .doc-viewer .doc-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-family: 'Malgun Gothic', sans-serif; font-weight: 600; }
+        .doc-viewer .doc-content { background: white; border: 1px solid #e5e7eb; padding: 14px; border-radius: 4px; margin: 8px 0; white-space: pre-wrap; }
+        .doc-viewer .score-table td:first-child { font-weight: bold; width: 80px; text-align: center; }
+        .doc-viewer blockquote { border-left: 3px solid #94a3b8; padding: 8px 16px; margin: 8px 0; background: #f1f5f9; color: #475569; font-style: italic; }
+
+        .result-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+        .result-tab { padding: 10px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; color: #94a3b8; background: #1e293b; border: 1px solid #334155; border-bottom: none; transition: all 0.2s; }
+        .result-tab:hover { color: #e2e8f0; }
+        .result-tab.active { background: #ffffff; color: #1a3a6a; font-weight: 600; }
+
+        .export-group { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .btn-export { padding: 10px 20px; border: 1px solid #475569; background: #1e293b; color: #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn-export:hover { border-color: #60a5fa; background: #1e3a5f; }
+
+        .summary-bar { position: fixed; right: 20px; top: 140px; width: 220px; background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155; font-size: 13px; }
+        .summary-bar h3 { color: #60a5fa; margin-bottom: 12px; font-size: 14px; }
+        .summary-item { margin-bottom: 8px; color: #94a3b8; }
+        .summary-item .val { color: #e2e8f0; font-weight: 500; }
+
+        /* + 추가 버튼 */
+        .add-card {
+            background: transparent;
+            border: 2px dashed #475569;
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 52px;
+        }
+        .add-card:hover { border-color: #60a5fa; color: #60a5fa; background: rgba(96, 165, 250, 0.05); }
+        .add-card .plus { font-size: 20px; font-weight: 300; }
+
+        .add-chip {
+            background: transparent;
+            border: 1px dashed #475569;
+            border-radius: 20px;
+            padding: 8px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            color: #64748b;
+        }
+        .add-chip:hover { border-color: #60a5fa; color: #60a5fa; }
+
+        /* 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 16px;
+            padding: 28px 32px;
+            width: 440px;
+            max-width: 90vw;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .modal h3 { color: #f1f5f9; font-size: 18px; margin-bottom: 4px; }
+        .modal .modal-subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+        .modal-field { margin-bottom: 16px; }
+        .modal-field label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+        .modal-field input, .modal-field textarea, .modal-field select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .modal-field input:focus, .modal-field textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        .modal-field textarea { resize: vertical; min-height: 80px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-btn { padding: 10px 22px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        .modal-btn-cancel { background: #334155; color: #e2e8f0; }
+        .modal-btn-cancel:hover { background: #475569; }
+        .modal-btn-add { background: #2563eb; color: white; }
+        .modal-btn-add:hover { background: #1d4ed8; }
+
+        /* 사용자 추가 항목 표시 */
+        .option-card.custom { border-style: dashed; border-color: #60a5fa44; }
+        .option-card.custom::after { content: '직접 추가'; position: absolute; top: 4px; right: 8px; font-size: 10px; color: #60a5fa; }
+        .comp-chip.custom { border-style: dashed; border-color: #60a5fa44; }
+
+        /* 수정 모드 */
+        .edit-json-area { width: 100%; min-height: 420px; background: #0f172a; color: #93c5fd; border: 1px solid #475569; border-radius: 8px; padding: 16px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.6; resize: vertical; }
+        .edit-json-area:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        .btn-refine { background: linear-gradient(135deg, #7c3aed, #9333ea) !important; color: white !important; border-color: #7c3aed !important; }
+        .btn-refine:hover { background: linear-gradient(135deg, #6d28d9, #7c3aed) !important; }
+        .btn-edit-direct { background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+        .btn-edit-direct:hover { border-color: #60a5fa; background: #1e3a5f; }
+        .btn-edit-direct.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+        .refine-loading { display: flex; align-items: center; gap: 10px; color: #94a3b8; font-size: 14px; padding: 8px 0; }
+
+        @media (max-width: 1200px) { .summary-bar { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>DC Simulation Builder</h1>
+            <div class="subtitle">AI 기반 Development Center 시뮬레이션 설계 도구</div>
+        </div>
+    </div>
+    <div class="progress-bar"><div class="steps" id="stepBar"></div></div>
+    <div class="main" id="mainContent"></div>
+    <div class="summary-bar" id="summaryBar" style="display:none;">
+        <h3>현재 설정</h3>
+        <div id="summaryContent"></div>
+    </div>
+
+    <!-- AI 수정 모달 -->
+    <div class="modal-overlay" id="refineModal">
+        <div class="modal" style="width:520px;">
+            <h3>✨ AI 수정 요청</h3>
+            <div class="modal-subtitle">현재 탭의 시나리오를 AI가 수정합니다. 수정하고 싶은 내용을 구체적으로 입력하세요.</div>
+            <div class="modal-field">
+                <label>수정 요청 내용</label>
+                <textarea id="refineInstruction" rows="5" placeholder="예시:&#10;• 서류 3번의 난이도를 높여줘&#10;• 배경 회사를 IT 스타트업으로 바꿔줘&#10;• 평가 기준표에 4점 기준을 추가해줘&#10;• 롤플레이 상대역의 성격을 더 공격적으로 바꿔줘" style="width:100%;background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;min-height:130px;"></textarea>
+            </div>
+            <div id="refineStatus" style="display:none;" class="refine-loading">
+                <div class="spinner" style="width:20px;height:20px;border-width:3px;"></div>
+                <span>AI가 수정 중입니다...</span>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" id="refineCancelBtn" onclick="closeRefineModal()">취소</button>
+                <button class="modal-btn modal-btn-add" id="refineSubmitBtn" onclick="submitRefine()" style="background:linear-gradient(135deg,#7c3aed,#9333ea);">수정 요청</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 추가 모달 -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <h3 id="modalTitle">항목 추가</h3>
+            <div class="modal-subtitle" id="modalSubtitle"></div>
+            <div id="modalFields"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">취소</button>
+                <button class="modal-btn modal-btn-add" onclick="submitModal()">추가</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════
+// 데이터
+// ═══════════════════════════════════════════
+
+const DATA = {
+    purposes: [
+        {id:'promotion', label:'승진 심사', icon:'📈', effect:'해당 직급에서 요구되는 상위 직급 역량 중심으로 시나리오 난이도와 복잡성이 조정됩니다.'},
+        {id:'hiring', label:'채용 선발', icon:'👥', effect:'직무 적합성 판단에 초점을 맞춘 실무 중심 시나리오가 생성됩니다.'},
+        {id:'leadership', label:'리더십 개발', icon:'🎯', effect:'리더십 역량 발휘 기회가 풍부한 도전적 상황이 포함됩니다.'},
+        {id:'diagnosis', label:'역량 진단', icon:'🔍', effect:'역량별 수준을 세밀하게 변별할 수 있는 다양한 난이도의 과제가 포함됩니다.'},
+        {id:'training', label:'교육/훈련', icon:'📚', effect:'학습과 성찰 기회를 제공하는 교육적 시나리오가 생성됩니다.'},
+        {id:'transfer', label:'직무 전환', icon:'🔄', effect:'새로운 직무 환경 적응력을 확인할 수 있는 시나리오가 생성됩니다.'},
+        {id:'highperf', label:'고성과자 선발', icon:'⭐', effect:'높은 난이도의 복합적 상황으로 우수 인재를 변별합니다.'},
+        {id:'talentpool', label:'핵심인재 풀', icon:'💎', effect:'잠재력과 성장 가능성을 확인할 수 있는 시나리오가 생성됩니다.'},
+    ],
+    levels: [
+        {id:'c-level', label:'C-Level (CEO/CFO/CTO)', group:'임원급'},
+        {id:'executive', label:'임원/본부장', group:'임원급'},
+        {id:'director', label:'부장/실장', group:'관리자급'},
+        {id:'deputy', label:'차장', group:'관리자급'},
+        {id:'manager', label:'과장', group:'관리자급'},
+        {id:'teamlead', label:'팀장', group:'관리자급'},
+        {id:'senior', label:'대리/선임', group:'실무급'},
+        {id:'staff', label:'사원/주임', group:'실무급'},
+        {id:'newbie', label:'신입사원', group:'기타'},
+        {id:'intern', label:'인턴', group:'기타'},
+    ],
+    industries: {
+        '제조': ['자동차','반도체/전자','화학/소재','기계/장비','식품/음료','의류/섬유','철강/금속','조선/해양','바이오/제약'],
+        '서비스': ['금융/보험','유통/리테일','호텔/외식','물류/운송','의료/헬스케어','교육','미디어/엔터','컨설팅','광고/마케팅'],
+        'IT/테크': ['소프트웨어','플랫폼/SaaS','게임','AI/데이터','보안','통신','핀테크','이커머스','클라우드'],
+        '공공/기타': ['공공기관','공기업','비영리/NGO','에너지','건설/부동산','농업/수산'],
+    },
+    jobs: {
+        '경영/관리': ['경영기획','전략기획','사업개발','프로젝트관리','총무/행정'],
+        '영업/마케팅': ['B2B 영업','B2C 영업','해외영업','마케팅','브랜드관리','CRM'],
+        '개발/기술': ['소프트웨어개발','데이터분석','인프라/DevOps','제품개발','연구/R&D','품질관리(QA)'],
+        '지원': ['인사/HR','재무/회계','법무','고객서비스','구매/조달','홍보/IR'],
+        '생산/현장': ['생산관리','공정관리','안전관리','물류관리','시설관리'],
+    },
+    competencies: {
+        '전략/비전': {color:'#7c3aed', items: {
+            '비전 제시':'조직의 미래 방향을 명확히 제시하고 구성원들에게 영감을 부여하는 능력',
+            '전략적 사고':'장기적 관점에서 조직의 방향을 설정하고 핵심 이슈를 파악하는 능력',
+            '변화관리':'조직 변화를 주도하고 구성원들의 변화 수용을 이끄는 능력',
+            '혁신지향':'기존 방식을 개선하고 새로운 가치를 창출하려는 성향과 능력',
+            '시스템 사고':'전체 시스템의 상호 연관성을 이해하고 통합적으로 판단하는 능력',
+            '사업감각':'시장, 경쟁, 고객 동향을 파악하여 사업 기회를 포착하는 능력',
+            '조직문화 형성':'바람직한 조직 문화를 설계하고 정착시키는 능력',
+        }},
+        '사고/분석': {color:'#8b5cf6', items: {
+            '분석적 사고':'복잡한 정보와 데이터를 체계적으로 분석하여 의미를 도출하는 능력',
+            '논리적 사고':'인과관계를 명확히 파악하고 논리적으로 추론하는 능력',
+            '창의적 사고':'기존 틀을 벗어나 새롭고 독창적인 아이디어를 발상하는 능력',
+            '문제해결':'문제의 근본 원인을 파악하고 효과적인 해결방안을 도출하는 능력',
+            '의사결정':'불확실한 상황에서 적시에 합리적인 판단을 내리는 능력',
+            '판단력':'다양한 요소를 종합적으로 고려하여 올바른 결론을 도출하는 능력',
+            '통찰력':'표면적 현상 너머의 본질과 패턴을 간파하는 능력',
+            '기획력':'목표 달성을 위한 체계적인 계획을 수립하는 능력',
+            '정보수집/활용':'필요한 정보를 효과적으로 수집하고 활용하는 능력',
+        }},
+        '조직/인력 관리': {color:'#3b82f6', items: {
+            '동기부여':'구성원들의 내적 동기를 자극하고 자발적 몰입을 이끌어내는 능력',
+            '코칭/육성':'구성원의 역량 개발을 지원하고 성장을 촉진하는 능력',
+            '임파워먼트':'구성원에게 권한을 위임하고 자율성을 부여하여 역량을 발휘하게 하는 능력',
+            '위임':'적절한 업무를 적합한 사람에게 배분하고 관리하는 능력',
+            '팀빌딩':'팀의 응집력과 시너지를 강화하는 능력',
+            '성과관리':'목표 대비 성과를 모니터링하고 개선하는 능력',
+            '자원관리':'인적/물적 자원을 효율적으로 배분하고 활용하는 능력',
+            '피드백 제공':'건설적인 피드백을 적절한 방식으로 전달하는 능력',
+            '솔선수범':'모범적 행동으로 조직의 가치와 기준을 실천하는 능력',
+        }},
+        '조정/통합': {color:'#0891b2', items: {
+            '조정/통합':'서로 다른 부서, 기능, 의견을 조율하여 하나의 방향으로 통합하는 능력',
+            '이해관계자관리':'다양한 이해관계자의 요구를 파악하고 균형 있게 조율하는 능력',
+            '갈등관리':'조직 내 구조적 갈등을 건설적으로 해결하고 관계를 회복하는 능력',
+            '협상력':'이해관계가 다른 상황에서 최적의 합의를 이끌어내는 능력',
+            '네트워킹':'업무에 필요한 인적 네트워크를 구축하고 활용하는 능력',
+            '영향력':'직위에 의존하지 않고 논리와 관계로 타인의 행동을 이끄는 능력',
+            '합의도출':'다양한 의견을 수렴하여 구성원들이 수용 가능한 결론을 이끌어내는 능력',
+            '부서간 협업':'부서 경계를 넘어 공동 목표를 위해 협력을 촉진하는 능력',
+        }},
+        '소통/대인관계': {color:'#06b6d4', items: {
+            '커뮤니케이션':'자신의 의견을 명확히 전달하고 상대방의 의사를 정확히 이해하는 능력',
+            '경청':'상대방의 말을 주의 깊게 듣고 진의를 파악하는 능력',
+            '공감능력':'타인의 감정과 입장을 이해하고 적절히 반응하는 능력',
+            '설득력':'논리와 감성을 활용하여 상대방의 동의와 지지를 얻는 능력',
+            '프레젠테이션':'청중에게 정보를 효과적으로 전달하고 설득하는 발표 능력',
+            '갈등해결':'대인 간 갈등 상황을 원만하게 조정하고 해결하는 능력',
+            '고객지향':'내/외부 고객의 니즈를 파악하고 만족을 극대화하는 능력',
+            '팀워크/협업':'팀 목표 달성을 위해 적극적으로 협력하고 기여하는 능력',
+        }},
+        '실행/성과': {color:'#f59e0b', items: {
+            '목표지향':'명확한 목표를 설정하고 달성을 위해 집중하는 능력',
+            '추진력/실행력':'계획을 신속하고 효과적으로 실행에 옮기는 능력',
+            '책임감':'맡은 업무에 대해 끝까지 책임지고 완수하는 태도',
+            '결과지향':'과정보다 결과에 초점을 맞추고 성과를 창출하는 능력',
+            '시간관리':'한정된 시간 내에서 업무 우선순위를 설정하고 효율적으로 처리하는 능력',
+            '업무조직화':'복잡한 업무를 체계적으로 구조화하고 관리하는 능력',
+            '위기관리':'예상치 못한 위기 상황에서 침착하게 대응하고 해결하는 능력',
+            '프로세스관리':'업무 프로세스를 설계하고 효율적으로 운영하는 능력',
+            '품질지향':'높은 품질 기준을 설정하고 달성하려는 성향',
+            '주도성':'지시 없이도 필요한 행동을 스스로 판단하고 실행하는 능력',
+        }},
+        '자기관리': {color:'#10b981', items: {
+            '스트레스관리':'높은 압박 상황에서도 평정심을 유지하고 효과적으로 대처하는 능력',
+            '감정조절':'감정을 적절히 관리하고 상황에 맞게 표현하는 능력',
+            '적응력/유연성':'변화하는 환경과 상황에 유연하게 대응하는 능력',
+            '회복탄력성':'실패나 좌절 후 빠르게 회복하고 교훈을 얻는 능력',
+            '자기인식':'자신의 강점, 약점, 감정을 객관적으로 인식하는 능력',
+            '자기개발':'지속적으로 학습하고 성장하려는 태도와 실행력',
+            '자기동기부여':'외부 자극 없이도 스스로 동기를 부여하고 몰입하는 능력',
+            '윤리의식':'도덕적 기준과 직업 윤리를 준수하는 태도',
+            '프로페셔널리즘':'전문가로서의 태도와 행동 기준을 일관되게 유지하는 능력',
+            '긍정적 태도':'어려운 상황에서도 낙관적 시각을 유지하는 성향',
+        }},
+        '글로벌/디지털': {color:'#ec4899', items: {
+            '글로벌 마인드':'다양한 문화와 글로벌 환경을 이해하고 적응하는 능력',
+            '다문화 이해':'다양한 문화적 배경을 가진 사람들과 효과적으로 협력하는 능력',
+            '디지털 리터러시':'디지털 도구와 기술을 이해하고 업무에 활용하는 능력',
+            '데이터 활용':'데이터를 기반으로 의사결정하고 인사이트를 도출하는 능력',
+            '외국어 소통':'외국어로 효과적으로 의사소통하는 능력',
+            '디지털 혁신':'디지털 기술을 활용하여 업무와 프로세스를 혁신하는 능력',
+            '원격 협업':'비대면 환경에서도 효과적으로 소통하고 협력하는 능력',
+        }},
+    },
+    // 기법별 잘 측정하는 역량
+    // 각 기법의 과제 특성상 행동 관찰이 용이한 역량을 매칭
+    //
+    // In-basket: 서류함에서 혼자 판단/처리하는 과제
+    //   → 인지적 역량(분석, 판단, 의사결정)과 업무 관리 역량이 주로 관찰됨
+    //
+    // Role-playing: 1:1 대면 상호작용 과제
+    //   → 대인관계 역량, 감정/갈등 관련 역량이 주로 관찰됨
+    //
+    // Presentation: 자료 분석 후 발표하는 과제
+    //   → 분석/논리적 사고, 전달력, 설득력이 주로 관찰됨
+    //
+    // Group Discussion: 다자간 토론 과제
+    //   → 집단 내 상호작용, 리더십, 협업 역량이 주로 관찰됨
+    methodCompetencyMatch: {
+        in_basket: [
+            // 핵심: 혼자 서류를 읽고 판단/처리하는 과제
+            '의사결정','판단력','시간관리','업무조직화','위임',
+            '문제해결','기획력','분석적 사고','정보수집/활용',
+            '목표지향','책임감','프로세스관리','자원관리','위기관리',
+            '결과지향','성과관리','전략적 사고','통찰력','주도성',
+            '윤리의식','품질지향',
+        ],
+        role_playing: [
+            // 핵심: 1:1 대면 상호작용 과제
+            '커뮤니케이션','경청','공감능력','갈등해결','갈등관리',
+            '설득력','협상력','감정조절','피드백 제공',
+            '코칭/육성','고객지향','동기부여','이해관계자관리',
+            '적응력/유연성','프로페셔널리즘','윤리의식',
+            '스트레스관리','자기인식',
+        ],
+        presentation: [
+            // 핵심: 자료 분석 후 발표/질의응답 과제
+            '프레젠테이션','분석적 사고','논리적 사고','전략적 사고',
+            '기획력','설득력','커뮤니케이션','비전 제시',
+            '데이터 활용','창의적 사고','통찰력','시스템 사고',
+            '스트레스관리','자기인식','혁신지향','사업감각',
+            '자기개발',
+        ],
+        gd_assigned_role: [
+            // 핵심: 각자 입장을 가지고 합의 도출
+            '협상력','설득력','갈등해결','갈등관리','합의도출',
+            '조정/통합','이해관계자관리','부서간 협업',
+            '커뮤니케이션','경청','영향력','논리적 사고',
+            '적응력/유연성','공감능력','스트레스관리',
+        ],
+        gd_free_discussion: [
+            // 핵심: 동일 자료 기반 협업적 문제해결
+            '팀워크/협업','경청','커뮤니케이션','창의적 사고',
+            '문제해결','주도성','팀빌딩','솔선수범',
+            '영향력','네트워킹','공감능력','합의도출',
+            '적응력/유연성','목표지향',
+        ],
+        case_study: [
+            // 핵심: 복잡한 비즈니스 사례를 분석하고 대안을 제시하는 과제
+            '전략적 사고','분석적 사고','논리적 사고','문제해결','의사결정',
+            '판단력','통찰력','시스템 사고','기획력','사업감각',
+            '창의적 사고','정보수집/활용','데이터 활용',
+            '혁신지향','비전 제시','변화관리','조직문화 형성',
+            '자원관리','위기관리','결과지향',
+        ],
+    },
+};
+
+const STEPS = [
+    {num:1, label:'사용 목적'},
+    {num:2, label:'대상 직급'},
+    {num:3, label:'산업/업종'},
+    {num:4, label:'직무'},
+    {num:5, label:'평가 역량'},
+    {num:6, label:'기법 설정'},
+    {num:7, label:'생성'},
+];
+
+// ═══════════════════════════════════════════
+// 상태
+// ═══════════════════════════════════════════
+
+let state = {
+    step: 1, purpose: '', level: '', industry: '', job: '',
+    competencies: [],
+    methods: {
+        in_basket: {enabled: false, duration: 30, difficulty: 3, doc_count: 10},
+        role_playing: {enabled: false, duration: 20, difficulty: 3, rounds: 2},
+        presentation: {enabled: false, duration: 30, difficulty: 3},
+        gd_assigned_role: {enabled: false, duration: 40, difficulty: 3},
+        gd_free_discussion: {enabled: false, duration: 40, difficulty: 3, participant_count: 5},
+        case_study: {enabled: false, duration: 45, difficulty: 3},
+    },
+    results: {}, generating: false, activeResultTab: null, editMode: false,
+    // 사용자가 직접 추가한 항목
+    custom: {
+        levels: [],       // [{label, group, description}]
+        industries: {},   // {category: [{name, description}]}
+        jobs: {},         // {category: [{name, description}]}
+        competencies: {}, // {category: [{name, definition}]}
+    },
+};
+
+// ═══════════════════════════════════════════
+// 모달 관련
+// ═══════════════════════════════════════════
+
+let modalContext = null; // {type, category} 현재 모달이 어떤 항목을 추가하는지
+
+function openAddModal(type, category) {
+    modalContext = {type, category};
+    const modal = document.getElementById('addModal');
+    const title = document.getElementById('modalTitle');
+    const subtitle = document.getElementById('modalSubtitle');
+    const fields = document.getElementById('modalFields');
+
+    if (type === 'level') {
+        title.textContent = '대상 직급 추가';
+        subtitle.textContent = `${category || ''} 카테고리에 새 직급을 추가합니다.`;
+        fields.innerHTML = `
+            <div class="modal-field">
+                <label>직급 명칭 *</label>
+                <input type="text" id="modalName" placeholder="예: 수석연구원, 파트장">
+            </div>
+            <div class="modal-field">
+                <label>카테고리</label>
+                <select id="modalCategory">
+                    <option value="임원급" ${category==='임원급'?'selected':''}>임원급</option>
+                    <option value="관리자급" ${category==='관리자급'?'selected':''}>관리자급</option>
+                    <option value="실무급" ${category==='실무급'?'selected':''}>실무급</option>
+                    <option value="기타" ${category==='기타'?'selected':''}>기타</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>설명 (선택)</label>
+                <textarea id="modalDesc" placeholder="이 직급에 대한 추가 설명"></textarea>
+            </div>`;
+    } else if (type === 'industry') {
+        title.textContent = '산업/업종 추가';
+        subtitle.textContent = `${category || ''} 카테고리에 새 업종을 추가합니다.`;
+        fields.innerHTML = `
+            <div class="modal-field">
+                <label>업종 명칭 *</label>
+                <input type="text" id="modalName" placeholder="예: 우주항공, 로봇">
+            </div>
+            <div class="modal-field">
+                <label>카테고리</label>
+                <select id="modalCategory">
+                    ${Object.keys(DATA.industries).map(c => `<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')}
+                    <option value="__new">+ 새 카테고리 직접 입력</option>
+                </select>
+            </div>
+            <div class="modal-field" id="newCatField" style="display:none;">
+                <label>새 카테고리 이름</label>
+                <input type="text" id="modalNewCat" placeholder="예: 국방/우주">
+            </div>
+            <div class="modal-field">
+                <label>설명 (선택)</label>
+                <textarea id="modalDesc" placeholder="이 업종에 대한 추가 설명"></textarea>
+            </div>`;
+        // 새 카테고리 선택 시 입력 필드 표시
+        setTimeout(() => {
+            const sel = document.getElementById('modalCategory');
+            if (sel) sel.onchange = () => {
+                document.getElementById('newCatField').style.display = sel.value === '__new' ? 'block' : 'none';
+            };
+        }, 50);
+    } else if (type === 'job') {
+        title.textContent = '직무 추가';
+        subtitle.textContent = `${category || ''} 카테고리에 새 직무를 추가합니다.`;
+        fields.innerHTML = `
+            <div class="modal-field">
+                <label>직무 명칭 *</label>
+                <input type="text" id="modalName" placeholder="예: UX디자인, ESG경영">
+            </div>
+            <div class="modal-field">
+                <label>카테고리</label>
+                <select id="modalCategory">
+                    ${Object.keys(DATA.jobs).map(c => `<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')}
+                    <option value="__new">+ 새 카테고리 직접 입력</option>
+                </select>
+            </div>
+            <div class="modal-field" id="newCatField" style="display:none;">
+                <label>새 카테고리 이름</label>
+                <input type="text" id="modalNewCat" placeholder="예: 디자인/UX">
+            </div>
+            <div class="modal-field">
+                <label>설명 (선택)</label>
+                <textarea id="modalDesc" placeholder="이 직무에 대한 추가 설명"></textarea>
+            </div>`;
+        setTimeout(() => {
+            const sel = document.getElementById('modalCategory');
+            if (sel) sel.onchange = () => {
+                document.getElementById('newCatField').style.display = sel.value === '__new' ? 'block' : 'none';
+            };
+        }, 50);
+    } else if (type === 'competency') {
+        title.textContent = '역량 추가';
+        subtitle.textContent = `${category || ''} 카테고리에 새 역량을 추가합니다.`;
+        fields.innerHTML = `
+            <div class="modal-field">
+                <label>역량 명칭 *</label>
+                <input type="text" id="modalName" placeholder="예: 다양성 관리, 재무 분석력">
+            </div>
+            <div class="modal-field">
+                <label>역량 정의 *</label>
+                <textarea id="modalDef" placeholder="이 역량의 정의를 입력하세요. 커서를 올렸을 때 표시됩니다."></textarea>
+            </div>
+            <div class="modal-field">
+                <label>카테고리</label>
+                <select id="modalCategory">
+                    ${Object.keys(DATA.competencies).map(c => `<option value="${c}" ${category===c?'selected':''}>${c}</option>`).join('')}
+                    <option value="__new">+ 새 카테고리 직접 입력</option>
+                </select>
+            </div>
+            <div class="modal-field" id="newCatField" style="display:none;">
+                <label>새 카테고리 이름</label>
+                <input type="text" id="modalNewCat" placeholder="예: 전문기술 역량">
+            </div>`;
+        setTimeout(() => {
+            const sel = document.getElementById('modalCategory');
+            if (sel) sel.onchange = () => {
+                document.getElementById('newCatField').style.display = sel.value === '__new' ? 'block' : 'none';
+            };
+        }, 50);
+    }
+
+    modal.classList.add('show');
+    setTimeout(() => { const inp = document.getElementById('modalName'); if (inp) inp.focus(); }, 100);
+}
+
+function closeModal() {
+    document.getElementById('addModal').classList.remove('show');
+    modalContext = null;
+}
+
+function submitModal() {
+    if (!modalContext) return;
+    const name = (document.getElementById('modalName') || {}).value?.trim();
+    if (!name) { alert('명칭을 입력해주세요.'); return; }
+
+    const {type, category} = modalContext;
+    let finalCategory = category;
+    const catSelect = document.getElementById('modalCategory');
+    if (catSelect) {
+        finalCategory = catSelect.value;
+        if (finalCategory === '__new') {
+            finalCategory = (document.getElementById('modalNewCat') || {}).value?.trim();
+            if (!finalCategory) { alert('카테고리 이름을 입력해주세요.'); return; }
+        }
+    }
+
+    if (type === 'level') {
+        const desc = (document.getElementById('modalDesc') || {}).value?.trim() || '';
+        DATA.levels.push({id: 'custom_' + Date.now(), label: name, group: finalCategory});
+        state.custom.levels.push({label: name, group: finalCategory, description: desc});
+    } else if (type === 'industry') {
+        const desc = (document.getElementById('modalDesc') || {}).value?.trim() || '';
+        if (!DATA.industries[finalCategory]) DATA.industries[finalCategory] = [];
+        DATA.industries[finalCategory].push(name);
+        if (!state.custom.industries[finalCategory]) state.custom.industries[finalCategory] = [];
+        state.custom.industries[finalCategory].push({name, description: desc});
+    } else if (type === 'job') {
+        const desc = (document.getElementById('modalDesc') || {}).value?.trim() || '';
+        if (!DATA.jobs[finalCategory]) DATA.jobs[finalCategory] = [];
+        DATA.jobs[finalCategory].push(name);
+        if (!state.custom.jobs[finalCategory]) state.custom.jobs[finalCategory] = [];
+        state.custom.jobs[finalCategory].push({name, description: desc});
+    } else if (type === 'competency') {
+        const def = (document.getElementById('modalDef') || {}).value?.trim() || name;
+        if (!DATA.competencies[finalCategory]) {
+            DATA.competencies[finalCategory] = {color: '#9ca3af', items: {}};
+        }
+        DATA.competencies[finalCategory].items[name] = def;
+        if (!state.custom.competencies[finalCategory]) state.custom.competencies[finalCategory] = [];
+        state.custom.competencies[finalCategory].push({name, definition: def});
+    }
+
+    closeModal();
+    render();
+}
+
+// ESC로 모달 닫기
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+// 항목이 사용자 추가 항목인지 확인
+function isCustomLevel(label) { return state.custom.levels.some(l => l.label === label); }
+function isCustomIndustry(name) { return Object.values(state.custom.industries).flat().some(i => i.name === name); }
+function isCustomJob(name) { return Object.values(state.custom.jobs).flat().some(j => j.name === name); }
+function isCustomCompetency(name) { return Object.values(state.custom.competencies).flat().some(c => c.name === name); }
+
+// ═══════════════════════════════════════════
+// 기법 추천 로직
+// ═══════════════════════════════════════════
+
+function getMethodRecommendations() {
+    const selected = state.competencies;
+    if (selected.length === 0) return {recommended: [], other: ['in_basket','role_playing','presentation','gd_assigned_role','gd_free_discussion','case_study']};
+
+    const scores = {};
+    for (const [method, matchComps] of Object.entries(DATA.methodCompetencyMatch)) {
+        const matched = selected.filter(c => matchComps.includes(c));
+        scores[method] = matched.length;
+    }
+
+    const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+    const recommended = sorted.filter(([m, s]) => s > 0).map(([m]) => m);
+    const other = sorted.filter(([m, s]) => s === 0).map(([m]) => m);
+    return {recommended, other, scores};
+}
+
+function findMultiMatchCompetencies() {
+    const selected = state.competencies;
+    if (selected.length === 0) return [];
+
+    const shortNames = {
+        in_basket:'서류함', role_playing:'역할극', presentation:'발표',
+        gd_assigned_role:'토론(역할)', gd_free_discussion:'토론(자유)', case_study:'사례분석'
+    };
+
+    const result = [];
+    for (const comp of selected) {
+        const matchedMethods = [];
+        for (const [method, comps] of Object.entries(DATA.methodCompetencyMatch)) {
+            if (comps.includes(comp)) matchedMethods.push(shortNames[method] || method);
+        }
+        if (matchedMethods.length >= 2) {
+            result.push({name: comp, methods: matchedMethods, count: matchedMethods.length});
+        }
+    }
+    return result.sort((a,b) => b.count - a.count);
+}
+
+function getPurposeRecommendation() {
+    const guides = {
+        '승진 심사': '승진 심사에서는 동일 역량을 2~3개 기법으로 중복 측정하여 변별력을 높이는 것이 좋습니다. In-basket + 역할극 + 발표 조합을 권장합니다.',
+        '채용 선발': '채용 시에는 직무 관련 핵심 역량을 최소 2개 기법으로 측정하세요. 역할극 + 사례분석 조합이 효과적입니다.',
+        '리더십 개발': '개발 목적에서는 다양한 기법을 사용하여 역량별 강/약점을 다각도로 진단하세요. 3개 이상의 기법 활용을 권장합니다.',
+        '역량 진단': '정확한 진단을 위해 핵심 역량은 반드시 2개 이상의 기법으로 중복 측정하세요.',
+        '교육/훈련': '학습 효과를 위해 참여형 기법(역할극, 집단토론)을 포함하세요.',
+        '고성과자 선발': '변별력을 위해 난이도를 높이고, 핵심 역량은 3개 기법으로 측정하는 것을 권장합니다.',
+        '핵심인재 풀': '잠재력 측정을 위해 현재 직급보다 높은 수준의 과제를 포함하세요. 사례분석 + 발표 조합이 효과적입니다.',
+    };
+    return guides[state.purpose] || '';
+}
+
+function getMatchedCompetencies(method) {
+    const matchComps = DATA.methodCompetencyMatch[method] || [];
+    return state.competencies.filter(c => matchComps.includes(c));
+}
+
+// ═══════════════════════════════════════════
+// 렌더링
+// ═══════════════════════════════════════════
+
+function render() {
+    renderStepBar();
+    renderContent();
+    renderSummary();
+}
+
+function renderStepBar() {
+    document.getElementById('stepBar').innerHTML = STEPS.map((s, i) => {
+        let cls = 'step';
+        if (s.num === state.step) cls += ' active';
+        else if (s.num < state.step) cls += ' done';
+        const arrow = i < STEPS.length - 1 ? '<span class="step-arrow">&rsaquo;</span>' : '';
+        return `<div class="${cls}" onclick="goStep(${s.num})"><span class="num">${s.num < state.step ? '&#10003;' : s.num}</span>${s.label}</div>${arrow}`;
+    }).join('');
+}
+
+function renderContent() {
+    const main = document.getElementById('mainContent');
+    switch(state.step) {
+        case 1: main.innerHTML = renderPurpose(); break;
+        case 2: main.innerHTML = renderLevel(); break;
+        case 3: main.innerHTML = renderIndustry(); break;
+        case 4: main.innerHTML = renderJob(); break;
+        case 5: main.innerHTML = renderCompetencies(); break;
+        case 6: main.innerHTML = renderMethods(); break;
+        case 7: main.innerHTML = renderGenerate(); break;
+    }
+}
+
+function renderPurpose() {
+    return `
+        <h2 class="section-title">시뮬레이션 사용 목적을 선택하세요</h2>
+        <p class="section-desc">목적에 따라 시나리오의 난이도, 복잡성, 초점이 달라집니다.</p>
+        <div class="option-grid">
+            ${DATA.purposes.map(p => `
+                <div class="option-card ${state.purpose === p.label ? 'selected' : ''}" onclick="select('purpose','${p.label}')">
+                    <div class="icon">${p.icon}</div>
+                    ${p.label}
+                    <div class="purpose-effect">${p.effect}</div>
+                </div>
+            `).join('')}
+        </div>
+        ${navButtons()}`;
+}
+
+function renderLevel() {
+    const groups = {};
+    DATA.levels.forEach(l => { if (!groups[l.group]) groups[l.group] = []; groups[l.group].push(l); });
+    return `
+        <h2 class="section-title">대상 직급을 선택하세요</h2>
+        <p class="section-desc">평가 대상자의 직급을 선택하세요. 원하는 직급이 없으면 + 버튼으로 추가할 수 있습니다.</p>
+        ${Object.entries(groups).map(([group, items]) => `
+            <div class="category-group">
+                <div class="category-label">${group}</div>
+                <div class="option-grid">${items.map(l => `
+                    <div class="option-card ${state.level === l.label ? 'selected' : ''} ${isCustomLevel(l.label) ? 'custom' : ''}" onclick="select('level','${l.label}')">${l.label}</div>
+                `).join('')}
+                    <div class="add-card" onclick="openAddModal('level','${group}')"><span class="plus">+</span> 추가</div>
+                </div>
+            </div>
+        `).join('')}
+        ${navButtons()}`;
+}
+
+function renderIndustry() {
+    return `
+        <h2 class="section-title">산업/업종을 선택하세요</h2>
+        <p class="section-desc">시나리오의 배경 산업이 됩니다. 원하는 업종이 없으면 + 버튼으로 추가할 수 있습니다.</p>
+        ${Object.entries(DATA.industries).map(([cat, items]) => `
+            <div class="category-group">
+                <div class="category-label">${cat}</div>
+                <div class="option-grid">${items.map(item => `
+                    <div class="option-card ${state.industry === item ? 'selected' : ''} ${isCustomIndustry(item) ? 'custom' : ''}" onclick="select('industry','${item}')">${item}</div>
+                `).join('')}
+                    <div class="add-card" onclick="openAddModal('industry','${cat}')"><span class="plus">+</span> 추가</div>
+                </div>
+            </div>
+        `).join('')}
+        ${navButtons()}`;
+}
+
+function renderJob() {
+    return `
+        <h2 class="section-title">직무를 선택하세요</h2>
+        <p class="section-desc">시나리오의 업무 맥락이 됩니다. 원하는 직무가 없으면 + 버튼으로 추가할 수 있습니다.</p>
+        ${Object.entries(DATA.jobs).map(([cat, items]) => `
+            <div class="category-group">
+                <div class="category-label">${cat}</div>
+                <div class="option-grid">${items.map(item => `
+                    <div class="option-card ${state.job === item ? 'selected' : ''} ${isCustomJob(item) ? 'custom' : ''}" onclick="select('job','${item}')">${item}</div>
+                `).join('')}
+                    <div class="add-card" onclick="openAddModal('job','${cat}')"><span class="plus">+</span> 추가</div>
+                </div>
+            </div>
+        `).join('')}
+        ${navButtons()}`;
+}
+
+function renderCompetencies() {
+    return `
+        <h2 class="section-title">평가 역량을 선택하세요</h2>
+        <p class="section-desc">측정할 역량을 선택하세요. 역량 위에 커서를 올리면 정의를 확인할 수 있습니다. (4~8개 권장)</p>
+        ${Object.entries(DATA.competencies).map(([cat, data]) => `
+            <div class="category-group">
+                <div class="category-label" style="color:${data.color}">${cat}</div>
+                <div class="competency-grid">
+                    ${Object.entries(data.items).map(([name, def]) => `
+                        <div class="comp-chip ${state.competencies.includes(name) ? 'selected' : ''} ${isCustomCompetency(name) ? 'custom' : ''}" onclick="toggleComp('${name}')">
+                            ${name}
+                            <div class="tooltip"><strong>${name}</strong><br>${def}</div>
+                        </div>
+                    `).join('')}
+                    <div class="add-chip" onclick="openAddModal('competency','${cat}')">+ 추가</div>
+                </div>
+            </div>
+        `).join('')}
+        <div class="comp-count">선택됨: ${state.competencies.length}개 / 권장: 4~8개</div>
+        ${navButtons()}`;
+}
+
+function renderMethods() {
+    const {recommended, other, scores} = getMethodRecommendations();
+    const methodInfo = {
+        in_basket: {icon:'📥', name:'In-basket (서류함)', desc:'가상 업무 서류함에서 이메일, 보고서, 메모 등을 읽고 우선순위 판단, 의사결정, 위임 등을 수행합니다.'},
+        role_playing: {icon:'🎭', name:'Role-playing (역할극)', desc:'특정 대인관계 상황(고객 불만, 부하 면담, 갈등 조정 등)에서 상대역과 1:1 대화를 수행합니다.'},
+        presentation: {icon:'📊', name:'Presentation (발표)', desc:'주어진 자료를 분석하고 발표를 준비하여 청중(경영진 등) 앞에서 발표하고 질의에 응답합니다.'},
+        gd_assigned_role: {icon:'💬', name:'집단토론 - 역할부여형', desc:'참가자 3명이 각각 다른 부서/입장을 대표하여 토론합니다. 각자 자기 입장의 근거 자료를 받고 합의를 도출합니다.'},
+        gd_free_discussion: {icon:'🗣️', name:'집단토론 - 자유토론형', desc:'참가자들이 동일한 자료를 기반으로 함께 아이디어를 모으거나 문제를 해결해 나갑니다.'},
+        case_study: {icon:'📋', name:'Case Study (사례분석)', desc:'복잡한 비즈니스 사례를 분석하고, 문제를 진단하여 전략적 대안을 수립·제시합니다.'},
+    };
+
+    function renderMethodCard(key, isRecommended) {
+        const m = methodInfo[key];
+        const matched = getMatchedCompetencies(key);
+        const s = state.methods[key];
+        return `
+            <div class="method-card ${s.enabled ? 'selected' : ''} ${isRecommended ? 'recommended-card' : ''}">
+                <div class="method-header">
+                    <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleMethod('${key}')">
+                    <span style="font-size:20px">${m.icon}</span>
+                    <span class="name">${m.name}</span>
+                </div>
+                <div class="method-desc">${m.desc}</div>
+                ${matched.length > 0 ? `<div class="method-match">매칭 역량: ${matched.join(', ')}</div>` : ''}
+                ${s.enabled ? `<div class="method-settings">
+                    <label>시간(분)<input type="number" value="${s.duration}" min="10" max="90" onchange="setMethodOpt('${key}','duration',this.value)"></label>
+                    <label>난이도<select onchange="setMethodOpt('${key}','difficulty',this.value)">
+                        ${[1,2,3,4,5].map(v => `<option value="${v}" ${s.difficulty==v?'selected':''}>${v}${v==1?' (쉬움)':v==3?' (보통)':v==5?' (어려움)':''}</option>`).join('')}
+                    </select></label>
+                    ${key==='in_basket' ? `<label>서류 수<input type="number" value="${s.doc_count}" min="5" max="15" onchange="setMethodOpt('${key}','doc_count',this.value)"></label>` : ''}
+                    ${key==='role_playing' ? `<label>라운드<input type="number" value="${s.rounds}" min="1" max="4" onchange="setMethodOpt('${key}','rounds',this.value)"></label>` : ''}
+                    ${key==='gd_assigned_role' ? `<label style="color:#4ade80;">참가자 3명 고정</label>` : ''}
+                    ${key==='gd_free_discussion' ? `<label>참가자 수<input type="number" value="${s.participant_count}" min="3" max="8" onchange="setMethodOpt('${key}','participant_count',this.value)"></label>` : ''}
+                </div>` : ''}
+            </div>`;
+    }
+
+    // 어떤 기법에도 매칭되지 않는 역량 찾기
+    const allMatchedComps = new Set();
+    Object.values(DATA.methodCompetencyMatch).forEach(comps => comps.forEach(c => allMatchedComps.add(c)));
+    const unmatchedComps = state.competencies.filter(c => !allMatchedComps.has(c));
+
+    let html = `<h2 class="section-title">평가 기법을 선택하세요</h2>
+        <p class="section-desc">선택한 역량에 따라 추천 기법이 상단에 표시됩니다.</p>`;
+
+    if (unmatchedComps.length > 0) {
+        html += `<div style="background:rgba(234,179,8,0.1); border:1px solid rgba(180,84,0,0.27); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#fbbf24;">
+            <strong>참고:</strong> 다음 역량은 특정 기법으로 직접 측정하기 어려운 역량입니다. 시나리오 전반에 걸쳐 간접적으로 관찰됩니다.<br>
+            <span style="color:#e2e8f0;">${unmatchedComps.join(', ')}</span>
+        </div>`;
+    }
+
+    // 중복 측정 가능한 역량 안내
+    const multiMatchComps = findMultiMatchCompetencies();
+    if (multiMatchComps.length > 0) {
+        const purposeGuide = getPurposeRecommendation();
+        html += `<div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.27); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#93c5fd;">
+            <strong>중복 측정 권장:</strong> 다음 역량은 여러 기법에서 관찰 가능하므로, 2개 이상의 기법을 선택하면 측정 신뢰도가 높아집니다.<br>
+            <span style="color:#e2e8f0;">${multiMatchComps.map(c => `${c.name}(${c.methods.join(', ')})`).slice(0,5).join(' | ')}</span>
+            ${purposeGuide ? `<br><br><strong>💡 ${state.purpose} 목적 추천:</strong> ${purposeGuide}` : ''}
+        </div>`;
+    }
+
+    if (recommended.length > 0) {
+        html += `<div class="method-section">
+            <div class="method-section-title recommended">추천 기법 (선택한 역량 측정에 적합)</div>
+            ${recommended.map(k => renderMethodCard(k, true)).join('')}
+        </div>`;
+    }
+    if (other.length > 0) {
+        html += `<div class="method-section">
+            <div class="method-section-title other">기타 기법</div>
+            ${other.map(k => renderMethodCard(k, false)).join('')}
+        </div>`;
+    }
+    if (recommended.length === 0 && other.length === 0) {
+        html += `<p style="color:#94a3b8;">역량을 먼저 선택하면 추천 기법이 표시됩니다.</p>`;
+    }
+
+    html += navButtons();
+    return html;
+}
+
+function renderGenerate() {
+    if (state.generating) {
+        return `<div class="loading">
+            <div class="spinner"></div>
+            <div style="color:#94a3b8;font-size:15px;">시나리오를 생성하고 있습니다...</div>
+            <div style="color:#60a5fa;font-size:14px;margin-top:8px;" id="loadingStatus">Claude AI가 시나리오를 설계 중입니다</div>
+        </div>`;
+    }
+    if (Object.keys(state.results).length > 0) return renderResults();
+
+    const enabledMethods = Object.entries(state.methods).filter(([k,v]) => v.enabled);
+    const methodNames = {in_basket:'📥 In-basket', role_playing:'🎭 Role-playing', presentation:'📊 Presentation', gd_assigned_role:'💬 집단토론(역할부여)', gd_free_discussion:'🗣️ 집단토론(자유토론)', case_study:'📋 Case Study'};
+
+    return `
+        <h2 class="section-title">시뮬레이션 생성</h2>
+        <p class="section-desc">설정을 확인하고 생성 버튼을 눌러주세요.</p>
+        <div class="doc-viewer" style="max-height:none; font-family:'Malgun Gothic',sans-serif; padding:32px 40px;">
+            <h1 style="text-align:center; border-bottom:2px solid #333;">DC 시뮬레이션 설계 요약</h1>
+            <table>
+                <tr><th style="width:140px;">사용 목적</th><td>${state.purpose || '-'}</td></tr>
+                <tr><th>대상 직급</th><td>${state.level || '-'}</td></tr>
+                <tr><th>산업/업종</th><td>${state.industry || '-'}</td></tr>
+                <tr><th>직무</th><td>${state.job || '-'}</td></tr>
+                <tr><th>평가 역량 (${state.competencies.length}개)</th><td>${state.competencies.join(', ') || '-'}</td></tr>
+                <tr><th>사용 기법</th><td>${enabledMethods.length > 0 ? enabledMethods.map(([k,v]) => `${methodNames[k]} (${v.duration}분, 난이도 ${v.difficulty})`).join('<br>') : '<span style="color:red;">기법을 선택해주세요</span>'}</td></tr>
+            </table>
+        </div>
+        <div style="text-align:center; margin-top:30px;">
+            <button class="btn btn-generate" onclick="startGenerate()" ${enabledMethods.length === 0 ? 'disabled' : ''}>
+                AI 시나리오 생성 시작
+            </button>
+            <p style="color:#94a3b8; font-size:13px; margin-top:10px;">기법당 약 30초~1분 소요됩니다</p>
+        </div>
+        <div class="btn-group"><button class="btn btn-prev" onclick="prevStep()">&#8592; 이전</button><div></div></div>`;
+}
+
+function renderResults() {
+    const methodNames = {in_basket:'📥 In-basket', role_playing:'🎭 Role-playing', presentation:'📊 Presentation', gd_assigned_role:'💬 집단토론(역할부여)', gd_free_discussion:'🗣️ 집단토론(자유토론)', case_study:'📋 Case Study'};
+    const tabs = Object.keys(state.results);
+    const activeTab = state.activeResultTab || tabs[0];
+
+    const contentArea = state.editMode
+        ? `<div style="margin-top:12px;">
+               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                   <span style="color:#94a3b8;font-size:13px;">JSON을 직접 수정 후 저장하세요.</span>
+                   <div style="display:flex;gap:8px;">
+                       <button class="btn-export" onclick="cancelEditMode()">취소</button>
+                       <button class="btn-export" onclick="saveDirectEdit()" style="background:#059669;border-color:#059669;color:white;font-weight:600;">💾 저장</button>
+                   </div>
+               </div>
+               <textarea class="edit-json-area" id="editJsonArea">${JSON.stringify(state.results[activeTab], null, 2).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+           </div>`
+        : `<div class="doc-viewer" id="docViewer">${formatAsDocument(state.results[activeTab], activeTab)}</div>`;
+
+    return `
+        <h2 class="section-title">생성 완료!</h2>
+        <p class="section-desc">문서 형태로 결과를 확인하세요.</p>
+        <div class="export-group">
+            <button class="btn-export" onclick="exportZip()">📦 ZIP 다운로드</button>
+            <button class="btn-export" onclick="exportCurrentMd()">📄 마크다운 복사</button>
+            <button class="btn-export btn-refine" onclick="openRefineModal()">✨ AI 수정 요청</button>
+            <button class="btn-edit-direct ${state.editMode ? 'active' : ''}" onclick="toggleEditMode()">✏️ 직접 편집</button>
+            <button class="btn btn-prev" onclick="resetAll()" style="margin-left:auto;">처음부터 다시</button>
+        </div>
+        <div class="result-tabs" style="margin-top:16px;">
+            ${tabs.map(t => `<div class="result-tab ${t === activeTab ? 'active' : ''}" onclick="switchTab('${t}')">${methodNames[t] || t}</div>`).join('')}
+        </div>
+        ${contentArea}`;
+}
+
+function formatAsDocument(scenario, method) {
+    if (!scenario) return '<p>시나리오가 없습니다.</p>';
+    if (scenario.parse_error) return `<p>${scenario.raw_text || 'JSON 파싱 실패'}</p>`;
+
+    let h = `<h1 style="text-align:center;">${scenario.title || ''}</h1>`;
+
+    if (method === 'in_basket') {
+        const bg = scenario.background || {};
+        h += `<h2>1. 시나리오 배경</h2><p>${(bg.full_text || bg.situation || '').replace(/\n/g,'<br>')}</p>`;
+        h += `<table><tr><th>회사</th><td>${bg.company||''}</td><th>역할</th><td>${bg.role||''}</td></tr>
+              <tr><th>날짜</th><td>${bg.date||''}</td><th>제약</th><td>${bg.constraints||''}</td></tr></table>`;
+
+        const docs = scenario.documents || [];
+        h += `<h2>2. 서류 목록 (${docs.length}건)</h2>`;
+        docs.forEach(doc => {
+            const uc = {상:'urgency-high',중:'urgency-mid',하:'urgency-low'}[doc.urgency] || '';
+            h += `<div class="doc-item">
+                <div class="doc-item-header">
+                    <span>서류 ${doc.id}: ${doc.subject}</span>
+                    <span class="${uc}">[${doc.urgency}]</span>
+                </div>
+                <p style="font-size:13px;color:#666;">발신: ${doc.from} | 유형: ${doc.type} | 측정역량: ${(doc.target_competencies||[]).join(', ')}</p>
+                <div class="doc-content">${(doc.content||'').replace(/\n/g,'<br>')}</div>
+                ${doc.model_answer ? `<table class="score-table" style="margin-top:8px;">
+                    <tr><th colspan="2" style="background:#e8f4e8;">모범 조치 가이드</th></tr>
+                    <tr><td style="color:#16a34a;">5점</td><td>${doc.model_answer.score_5||''}</td></tr>
+                    <tr><td style="color:#d97706;">3점</td><td>${doc.model_answer.score_3||''}</td></tr>
+                    <tr><td style="color:#dc2626;">1점</td><td>${doc.model_answer.score_1||''}</td></tr>
+                </table>` : ''}
+            </div>`;
+        });
+    } else if (method === 'role_playing') {
+        (scenario.rounds || []).forEach(r => {
+            const sit = r.situation_for_participant || {};
+            const cp = r.counterpart || {};
+            h += `<h2>라운드 ${r.round_number}</h2>`;
+            h += `<h3>참가자 상황 설명</h3><p>${(sit.full_text || sit.context || '').replace(/\n/g,'<br>')}</p>`;
+            h += `<table><tr><th>역할</th><td>${sit.role||''}</td></tr><tr><th>목표</th><td>${sit.objective||''}</td></tr><tr><th>제약</th><td>${sit.constraints||''}</td></tr></table>`;
+            h += `<h3>상대역 정보 (평가자/배우용)</h3>`;
+            h += `<table><tr><th>이름</th><td>${cp.name||''}</td><th>직책</th><td>${cp.title||''}</td></tr>
+                  <tr><th>성격</th><td>${cp.personality||''}</td><th>감정</th><td>${cp.emotional_state||''}</td></tr>
+                  <tr><th>핵심 요구</th><td colspan="3">${cp.core_need||''}</td></tr></table>`;
+            h += `<blockquote>시작 대사: "${cp.opening_line||''}"</blockquote>`;
+            const rs = cp.response_scenarios || {};
+            if (Object.keys(rs).length > 0) {
+                h += `<table><tr><th>참가자 반응</th><th>상대역 대응</th></tr>`;
+                const labels = {empathy:'공감할 때',ignore:'무시할 때',solution:'해결책 제시',aggressive:'공격적일 때',compromise:'타협 제안'};
+                for (const [k,v] of Object.entries(rs)) h += `<tr><td>${labels[k]||k}</td><td>${v}</td></tr>`;
+                h += `</table>`;
+            }
+            h += `<p><strong>양보 불가:</strong> ${cp.non_negotiable||''}<br><strong>양보 가능:</strong> ${cp.negotiable||''}</p>`;
+        });
+    } else if (method === 'presentation') {
+        const ti = scenario.task_instruction || {};
+        h += `<h2>1. 과제 지시문</h2><p>${(ti.full_text || ti.overview || '').replace(/\n/g,'<br>')}</p>`;
+        h += `<table><tr><th>발표 대상</th><td>${ti.audience||''}</td></tr><tr><th>기대 구성</th><td>${ti.expected_structure||''}</td></tr><tr><th>제약</th><td>${ti.constraints||''}</td></tr></table>`;
+        const mats = scenario.materials || [];
+        h += `<h2>2. 제공 자료 (${mats.length}건)</h2>`;
+        mats.forEach(m => {
+            h += `<div class="doc-item"><div class="doc-item-header"><span>자료 ${m.id}: ${m.title}</span><span style="color:#666;">[${m.type||''}]</span></div>
+                  <div class="doc-content">${(m.content||'').replace(/\n/g,'<br>')}</div>
+                  ${m.has_conflicting_info ? `<p style="color:#dc2626;font-size:13px;">* 상충 정보 포함: ${m.conflict_detail||''}</p>` : ''}</div>`;
+        });
+        const qa = scenario.qa_questions || {};
+        h += `<h2>3. 질의응답 질문</h2><h3>기본 질문</h3>`;
+        (qa.basic||[]).forEach(q => h += `<div class="doc-item"><strong>Q:</strong> ${q.question}<br><span style="font-size:12px;color:#666;">측정: ${q.intent||''} | 좋은 답변: ${q.good_answer_guide||''}</span></div>`);
+        h += `<h3>심화/압박 질문</h3>`;
+        (qa.advanced||[]).forEach(q => h += `<div class="doc-item"><strong>Q:</strong> ${q.question}<br><span style="font-size:12px;color:#666;">측정: ${q.intent||''} | 좋은 답변: ${q.good_answer_guide||''}</span></div>`);
+    } else if (method === 'gd_assigned_role') {
+        const topic = scenario.topic || {};
+        h += `<h2>1. 토론 주제</h2><h3 style="font-size:16px;background:none;padding:0;">"${topic.statement||''}"</h3>`;
+        h += `<p>${(topic.full_text || topic.background || '').replace(/\n/g,'<br>')}</p>`;
+        if (topic.decision_required) h += `<p><strong>결정 사항:</strong> ${topic.decision_required}</p>`;
+
+        const common = scenario.common_materials || [];
+        if (common.length > 0) { h += `<h2>2. 공통 자료</h2>`; common.forEach(m => h += `<div class="doc-item"><div class="doc-item-header">${m.title||''}</div><div class="doc-content">${(m.content||'').replace(/\n/g,'<br>')}</div></div>`); }
+
+        const roles = scenario.roles || [];
+        h += `<h2>3. 역할 카드 (${roles.length}개)</h2>`;
+        roles.forEach(r => {
+            h += `<div class="doc-item"><div class="doc-item-header">역할 ${r.role_number}: ${r.department||''} ${r.position_title||''}</div>`;
+            h += `<p><strong>입장:</strong> ${r.stance||''}</p>`;
+            h += `<div class="doc-content">${(r.card_text||'').replace(/\n/g,'<br>')}</div>`;
+            const sm = r.supporting_materials || [];
+            if (sm.length > 0) {
+                h += `<h3 style="margin-top:12px;">개별 근거 자료</h3>`;
+                sm.forEach(s => h += `<div style="background:#fff;border:1px solid #ddd;padding:12px;margin:6px 0;border-radius:4px;"><strong>${s.title||''}</strong><br>${(s.content||'').replace(/\n/g,'<br>')}</div>`);
+            }
+            const ng = r.negotiation_guide || {};
+            if (ng.must_achieve) h += `<p style="font-size:13px;"><strong>반드시 관철:</strong> ${ng.must_achieve} | <strong>양보 가능:</strong> ${ng.can_concede||''}</p>`;
+            h += `</div>`;
+        });
+
+        const rules = scenario.discussion_rules || {};
+        h += `<h2>4. 토론 규칙</h2><table><tr><th>시간</th><td>${rules.duration||''}분</td><th>참가자</th><td>${rules.participant_count||3}명</td></tr><tr><th>목표</th><td colspan="3">${rules.goal||''}</td></tr></table>`;
+
+    } else if (method === 'gd_free_discussion') {
+        const topic = scenario.topic || {};
+        h += `<h2>1. 토론 주제</h2><h3 style="font-size:16px;background:none;padding:0;">"${topic.statement||''}"</h3>`;
+        h += `<p>${(topic.full_text || topic.background || '').replace(/\n/g,'<br>')}</p>`;
+        if (topic.type) h += `<p><strong>토론 유형:</strong> ${topic.type} | <strong>기대 결과:</strong> ${topic.expected_outcome||''}</p>`;
+
+        const mats = scenario.materials || [];
+        if (mats.length > 0) {
+            h += `<h2>2. 공통 자료 (${mats.length}건)</h2>`;
+            mats.forEach(m => {
+                h += `<div class="doc-item"><div class="doc-item-header">${m.title||''}</div><div class="doc-content">${(m.content||'').replace(/\n/g,'<br>')}</div>`;
+                const ap = m.analysis_points || [];
+                if (ap.length > 0) h += `<p style="font-size:12px;color:#666;">논의 포인트: ${ap.join(', ')}</p>`;
+                h += `</div>`;
+            });
+        }
+
+        const guide = scenario.discussion_guide || {};
+        if (guide.suggested_flow) {
+            h += `<h2>3. 토론 진행 가이드</h2><ul>`;
+            (guide.suggested_flow || []).forEach(s => h += `<li>${s}</li>`);
+            h += `</ul>`;
+        }
+
+        const rules = scenario.discussion_rules || {};
+        h += `<h2>4. 토론 규칙</h2><table><tr><th>시간</th><td>${rules.duration||''}분</td><th>참가자</th><td>${rules.participant_count||''}명</td></tr><tr><th>목표</th><td colspan="3">${rules.goal||''}</td></tr></table>`;
+
+    } else if (method === 'case_study') {
+        const cs = scenario.case_overview || scenario.background || {};
+        h += `<h2>1. 사례 개요</h2><p>${(cs.full_text || cs.overview || JSON.stringify(cs)).replace(/\n/g,'<br>')}</p>`;
+        if (cs.company) h += `<table><tr><th>기업</th><td>${cs.company||''}</td><th>업종</th><td>${cs.industry||''}</td></tr><tr><th>상황</th><td colspan="3">${cs.situation||''}</td></tr></table>`;
+
+        const data = scenario.case_data || scenario.materials || [];
+        if (data.length > 0) {
+            h += `<h2>2. 제공 데이터/자료 (${data.length}건)</h2>`;
+            data.forEach(d => {
+                h += `<div class="doc-item"><div class="doc-item-header">${d.title||d.name||''}</div>`;
+                h += `<div class="doc-content">${(d.content||d.data||'').replace(/\n/g,'<br>')}</div></div>`;
+            });
+        }
+
+        const questions = scenario.analysis_questions || scenario.questions || [];
+        if (questions.length > 0) {
+            h += `<h2>3. 분석 과제</h2>`;
+            questions.forEach((q,i) => {
+                if (typeof q === 'string') { h += `<div class="doc-item"><strong>${i+1}.</strong> ${q}</div>`; }
+                else { h += `<div class="doc-item"><strong>${i+1}. ${q.question||q.title||''}</strong><br><span style="font-size:12px;color:#666;">측정 역량: ${q.target_competency||q.intent||''}</span>${q.good_answer_guide ? `<br><span style="font-size:12px;color:#666;">좋은 답변 방향: ${q.good_answer_guide}</span>` : ''}</div>`; }
+            });
+        }
+
+        const solution = scenario.model_solution || scenario.model_answer || {};
+        if (Object.keys(solution).length > 0) {
+            h += `<h2>4. 모범 답안 가이드</h2>`;
+            if (typeof solution === 'string') { h += `<div class="doc-content">${solution.replace(/\n/g,'<br>')}</div>`; }
+            else {
+                h += `<div class="doc-item">`;
+                for (const [k,v] of Object.entries(solution)) { h += `<p><strong>${k}:</strong> ${typeof v === 'string' ? v : JSON.stringify(v)}</p>`; }
+                h += `</div>`;
+            }
+        }
+    }
+
+    // 공통 평가 기준
+    const criteria = scenario.evaluation_criteria || [];
+    if (criteria.length > 0) {
+        h += `<h2>평가 기준표</h2>`;
+        criteria.forEach(c => {
+            h += `<h3>${c.competency||''}</h3>`;
+            const bi = c.behavioral_indicators || [];
+            if (bi.length > 0) { h += `<p><strong>행동 지표:</strong></p><ul>${bi.map(b=>`<li>${b}</li>`).join('')}</ul>`; }
+            const bars = c.bars || {};
+            if (Object.keys(bars).length > 0) {
+                h += `<table><tr><th>점수</th><th>기준</th></tr>`;
+                for (const s of Object.keys(bars).sort((a,b)=>Number(b)-Number(a))) h += `<tr><td style="text-align:center;font-weight:bold;">${s}점</td><td>${bars[s]}</td></tr>`;
+                h += `</table>`;
+            }
+        });
+    }
+    if (scenario.facilitator_guide) h += `<h2>진행자 가이드</h2><p>${(scenario.facilitator_guide||'').replace(/\n/g,'<br>')}</p>`;
+    if (scenario._meta) h += `<hr><p style="font-size:11px;color:#999;text-align:right;">생성 시간: ${scenario._meta.generation_time}초 | 토큰: ${scenario._meta.tokens}</p>`;
+    return h;
+}
+
+// ═══════════════════════════════════════════
+// 액션
+// ═══════════════════════════════════════════
+
+function select(field, value) { state[field] = value; render(); }
+function toggleComp(comp) { const i = state.competencies.indexOf(comp); if (i>=0) state.competencies.splice(i,1); else state.competencies.push(comp); render(); }
+function toggleMethod(key) { state.methods[key].enabled = !state.methods[key].enabled; render(); }
+function setMethodOpt(method, key, value) { state.methods[method][key] = parseInt(value); }
+function goStep(n) { state.step = n; render(); }
+function nextStep() { if (state.step < 7) state.step++; render(); }
+function prevStep() { if (state.step > 1) state.step--; render(); }
+function switchTab(tab) { state.activeResultTab = tab; render(); }
+function resetAll() { state = {step:1,purpose:'',level:'',industry:'',job:'',competencies:[],methods:{in_basket:{enabled:false,duration:30,difficulty:3,doc_count:10},role_playing:{enabled:false,duration:20,difficulty:3,rounds:2},presentation:{enabled:false,duration:30,difficulty:3},group_discussion:{enabled:false,duration:40,difficulty:3,participant_count:5},case_study:{enabled:false,duration:45,difficulty:3}},results:{},generating:false,activeResultTab:null,editMode:false,custom:{levels:[],industries:{},jobs:{},competencies:{}}}; render(); }
+
+function navButtons() {
+    const warning = getStepWarning();
+    return `
+        ${warning ? `<div style="background:rgba(234,179,8,0.1); border:1px solid #b4540044; border-radius:8px; padding:10px 16px; margin-top:16px; font-size:13px; color:#fbbf24;">${warning}</div>` : ''}
+        <div class="btn-group">
+            ${state.step > 1 ? '<button class="btn btn-prev" onclick="prevStep()">&#8592; 이전</button>' : '<div></div>'}
+            <button class="btn btn-next" onclick="tryNextStep()">다음 &#8594;</button>
+        </div>`;
+}
+
+function getStepWarning() {
+    switch(state.step) {
+        case 1: return !state.purpose ? '사용 목적을 선택하지 않으면 시나리오의 난이도와 초점이 일반적으로 생성됩니다.' : '';
+        case 2: return !state.level ? '대상 직급을 선택하지 않으면 직급에 맞는 난이도 조절이 어렵습니다.' : '';
+        case 3: return !state.industry ? '산업/업종을 선택하지 않으면 시나리오의 현실감이 떨어질 수 있습니다.' : '';
+        case 4: return !state.job ? '직무를 선택하지 않으면 업무 맥락이 일반적으로 생성됩니다.' : '';
+        case 5: return state.competencies.length === 0 ? '&#9888; 평가 역량은 반드시 1개 이상 선택해야 합니다.' : (state.competencies.length < 4 ? '역량을 4개 이상 선택하면 더 풍부한 평가 기준이 생성됩니다.' : '');
+        case 6: {
+            const enabled = Object.values(state.methods).filter(m => m.enabled).length;
+            return enabled === 0 ? '&#9888; 최소 1개 이상의 기법을 선택해야 합니다.' : '';
+        }
+        default: return '';
+    }
+}
+
+function tryNextStep() {
+    // 필수 체크
+    if (state.step === 5 && state.competencies.length === 0) {
+        alert('평가 역량을 최소 1개 이상 선택해주세요.\n역량이 없으면 시나리오의 평가 기준을 생성할 수 없습니다.');
+        return;
+    }
+    if (state.step === 6) {
+        const enabled = Object.values(state.methods).filter(m => m.enabled).length;
+        if (enabled === 0) {
+            alert('최소 1개 이상의 기법을 선택해주세요.');
+            return;
+        }
+    }
+    nextStep();
+}
+
+function renderSummary() {
+    const bar = document.getElementById('summaryBar');
+    const content = document.getElementById('summaryContent');
+    if (state.step < 2) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+    let html = '';
+    if (state.purpose) html += `<div class="summary-item">목적: <span class="val">${state.purpose}</span></div>`;
+    if (state.level) html += `<div class="summary-item">직급: <span class="val">${state.level}</span></div>`;
+    if (state.industry) html += `<div class="summary-item">업종: <span class="val">${state.industry}</span></div>`;
+    if (state.job) html += `<div class="summary-item">직무: <span class="val">${state.job}</span></div>`;
+    if (state.competencies.length) html += `<div class="summary-item">역량: <span class="val">${state.competencies.length}개</span></div>`;
+    content.innerHTML = html;
+}
+
+async function startGenerate() {
+    state.generating = true; state.results = {}; render();
+    const enabledMethods = Object.entries(state.methods).filter(([k,v]) => v.enabled).map(([k]) => k);
+    const names = {in_basket:'In-basket',role_playing:'Role-playing',presentation:'Presentation',gd_assigned_role:'집단토론(역할부여)',gd_free_discussion:'집단토론(자유토론)',case_study:'Case Study'};
+    for (const method of enabledMethods) {
+        const el = document.getElementById('loadingStatus');
+        if (el) el.textContent = `${names[method]} 생성 중... (${enabledMethods.indexOf(method)+1}/${enabledMethods.length})`;
+        try {
+            const res = await fetch('/api/generate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,params:{evaluation_purpose:state.purpose,target_level:state.level,industry:state.industry,job_function:state.job,competencies:state.competencies,difficulty:state.methods[method].difficulty,duration:state.methods[method].duration,doc_count:state.methods[method].doc_count,rounds:state.methods[method].rounds,participant_count:state.methods[method].participant_count}})});
+            const data = await res.json();
+            if (data.success) state.results[method] = data.scenario;
+        } catch (e) { console.error(method, e); }
+    }
+    state.generating = false; state.activeResultTab = enabledMethods[0]; render();
+}
+
+async function exportZip() {
+    const res = await fetch('/api/export/zip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_name:`DC_${state.purpose}_${state.level}`,scenarios:state.results})});
+    const blob = await res.blob(); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `DC_시뮬레이션_${state.purpose}.zip`; a.click(); URL.revokeObjectURL(url);
+}
+
+async function exportCurrentMd() {
+    const tab = state.activeResultTab;
+    const res = await fetch('/api/export/markdown',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:tab,scenario:state.results[tab]})});
+    const data = await res.json();
+    if (data.success) { navigator.clipboard.writeText(data.markdown); alert('마크다운이 클립보드에 복사되었습니다!'); }
+}
+
+// ═══════════════════════════════════════════
+// 직접 편집
+// ═══════════════════════════════════════════
+
+function toggleEditMode() {
+    if (state.editMode) { cancelEditMode(); return; }
+    state.editMode = true;
+    render();
+}
+
+function cancelEditMode() { state.editMode = false; render(); }
+
+function saveDirectEdit() {
+    const ta = document.getElementById('editJsonArea');
+    if (!ta) return;
+    try {
+        const parsed = JSON.parse(ta.value);
+        state.results[state.activeResultTab] = parsed;
+        state.editMode = false;
+        render();
+    } catch(e) {
+        alert('JSON 형식이 올바르지 않습니다. 수정 후 다시 시도해주세요.\n\n오류: ' + e.message);
+    }
+}
+
+// ═══════════════════════════════════════════
+// AI 수정 요청
+// ═══════════════════════════════════════════
+
+function openRefineModal() {
+    document.getElementById('refineInstruction').value = '';
+    document.getElementById('refineStatus').style.display = 'none';
+    document.getElementById('refineSubmitBtn').disabled = false;
+    document.getElementById('refineCancelBtn').disabled = false;
+    document.getElementById('refineModal').classList.add('show');
+}
+
+function closeRefineModal() {
+    document.getElementById('refineModal').classList.remove('show');
+}
+
+async function submitRefine() {
+    const instruction = document.getElementById('refineInstruction').value.trim();
+    if (!instruction) { alert('수정 요청 내용을 입력해주세요.'); return; }
+    const tab = state.activeResultTab;
+    document.getElementById('refineStatus').style.display = 'flex';
+    document.getElementById('refineSubmitBtn').disabled = true;
+    document.getElementById('refineCancelBtn').disabled = true;
+    try {
+        const res = await fetch('/api/refine', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({method: tab, scenario: state.results[tab], instruction})
+        });
+        const data = await res.json();
+        if (data.success) {
+            state.results[tab] = data.scenario;
+            closeRefineModal();
+            render();
+        } else {
+            alert('수정 실패: ' + data.error);
+        }
+    } catch(e) {
+        alert('오류 발생: ' + e.message);
+    } finally {
+        document.getElementById('refineStatus').style.display = 'none';
+        document.getElementById('refineSubmitBtn').disabled = false;
+        document.getElementById('refineCancelBtn').disabled = false;
+    }
+}
+
+render();
+</script>
+</body>
+</html>

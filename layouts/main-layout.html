@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Development Center 시뮬레이션 빌더</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+</head>
+<body>
+    <!-- 메인 레이아웃 -->
+    <div class="app-container">
+        <!-- 헤더 -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32">
+                            <rect width="32" height="32" rx="8" fill="#2563EB"/>
+                            <path d="M8 12h16v2H8v-2zM8 16h12v2H8v-2zM8 20h8v2H8v-2z" fill="white"/>
+                        </svg>
+                        <span class="logo-text">DC 시뮬레이션 빌더</span>
+                    </div>
+                </div>
+                
+                <nav class="header-nav">
+                    <ul class="nav-list">
+                        <li class="nav-item active">
+                            <a href="#" class="nav-link">
+                                <span class="nav-icon">🏗️</span>
+                                <span>빌더</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <span class="nav-icon">📊</span>
+                                <span>프로젝트</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <span class="nav-icon">📚</span>
+                                <span>템플릿</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="header-right">
+                    <button class="btn-icon" title="알림">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://via.placeholder.com/32" alt="사용자" class="profile-image">
+                        <span class="profile-name">김개발</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <main class="app-main">
+            <!-- 사이드바 -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">프로젝트 진행단계</h3>
+                </div>
+                
+                <div class="sidebar-content">
+                    <div class="progress-steps">
+                        <div class="step active">
+                            <div class="step-indicator">
+                                <span class="step-number">1</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">기본 설정</h4>
+                                <p class="step-description">평가 목적 및 대상 설정</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <div class="step-indicator">
+                                <span class="step-number">2</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">평가 기법</h4>
+                                <p class="step-description">기법 선택 및 설정</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <div class="step-indicator">
+                                <span class="step-number">3</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">시나리오 생성</h4>
+                                <p class="step-description">AI 기반 자동 생성</p>
+                            </div>
+                        </div>
+                        
+                        <div class="step">
+                            <div class="step-indicator">
+                                <span class="step-number">4</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">검토 및 내보내기</h4>
+                                <p class="step-description">최종 문서 생성</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 메인 콘텐츠 -->
+            <div class="main-content">
+                <div class="content-header">
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item">홈</span>
+                        <span class="breadcrumb-separator">></span>
+                        <span class="breadcrumb-item">새 프로젝트</span>
+                        <span class="breadcrumb-separator">></span>
+                        <span class="breadcrumb-item current">기본 설정</span>
+                    </div>
+                    
+                    <div class="content-actions">
+                        <button class="btn-secondary">임시저장</button>
+                        <button class="btn-primary">다음 단계</button>
+                    </div>
+                </div>
+
+                <!-- 여기에 각 단계별 콘텐츠가 들어갑니다 -->
+                <div class="content-body" id="content-body">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

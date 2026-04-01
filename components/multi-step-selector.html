@@ -1,0 +1,251 @@
+<!-- 다단계 선택 인터페이스 -->
+<div class="multi-step-selector">
+    <div class="selector-container">
+        <!-- 1단계: 평가 목적 선택 -->
+        <div class="selection-step active" data-step="1">
+            <div class="step-header">
+                <h2 class="step-title">평가 목적을 선택해주세요</h2>
+                <p class="step-subtitle">진행하고자 하는 평가의 목적을 선택하면 맞춤형 시나리오를 제공합니다.</p>
+            </div>
+            
+            <div class="selection-grid">
+                <div class="selection-card" data-value="promotion">
+                    <div class="card-icon">📈</div>
+                    <h3 class="card-title">승진심사</h3>
+                    <p class="card-description">관리자 역량 평가를 통한 승진 후보자 선발</p>
+                    <div class="card-badge">추천</div>
+                </div>
+                
+                <div class="selection-card" data-value="recruitment">
+                    <div class="card-icon">🎯</div>
+                    <h3 class="card-title">채용선발</h3>
+                    <p class="card-description">신입/경력 직원의 직무 적합성 평가</p>
+                </div>
+                
+                <div class="selection-card" data-value="leadership">
+                    <div class="card-icon">🌟</div>
+                    <h3 class="card-title">리더십개발</h3>
+                    <p class="card-description">리더십 역량 진단 및 개발 계획 수립</p>
+                </div>
+                
+                <div class="selection-card" data-value="competency">
+                    <div class="card-icon">🔍</div>
+                    <h3 class="card-title">역량진단</h3>
+                    <p class="card-description">개인별 역량 수준 측정 및 분석</p>
+                </div>
+                
+                <div class="selection-card" data-value="training">
+                    <div class="card-icon">📚</div>
+                    <h3 class="card-title">교육훈련</h3>
+                    <p class="card-description">교육 효과 측정 및 학습 성과 평가</p>
+                </div>
+                
+                <div class="selection-card" data-value="transition">
+                    <div class="card-icon">🔄</div>
+                    <h3 class="card-title">직무전환</h3>
+                    <p class="card-description">새로운 직무로의 적응 능력 평가</p>
+                </div>
+                
+                <div class="selection-card" data-value="high-performer">
+                    <div class="card-icon">⭐</div>
+                    <h3 class="card-title">고성과자선발</h3>
+                    <p class="card-description">우수 인재 발굴 및 선별</p>
+                </div>
+                
+                <div class="selection-card" data-value="talent-pool">
+                    <div class="card-icon">💎</div>
+                    <h3 class="card-title">핵심인재풀</h3>
+                    <p class="card-description">미래 리더 후보군 구성</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2단계: 대상 직급 선택 -->
+        <div class="selection-step" data-step="2">
+            <div class="step-header">
+                <h2 class="step-title">대상 직급을 선택해주세요</h2>
+                <p class="step-subtitle">평가 대상자의 직급에 맞는 난이도와 상황을 설정합니다.</p>
+            </div>
+            
+            <div class="selection-grid grid-compact">
+                <div class="selection-card compact" data-value="c-level">
+                    <div class="card-icon">👑</div>
+                    <h3 class="card-title">C-Level</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="executive">
+                    <div class="card-icon">🏢</div>
+                    <h3 class="card-title">임원</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="director">
+                    <div class="card-icon">📊</div>
+                    <h3 class="card-title">부장</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="deputy-director">
+                    <div class="card-icon">📈</div>
+                    <h3 class="card-title">차장</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="manager">
+                    <div class="card-icon">👥</div>
+                    <h3 class="card-title">과장</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="assistant-manager">
+                    <div class="card-icon">📝</div>
+                    <h3 class="card-title">대리</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="associate">
+                    <div class="card-icon">💼</div>
+                    <h3 class="card-title">사원</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="new-hire">
+                    <div class="card-icon">🌱</div>
+                    <h3 class="card-title">신입</h3>
+                </div>
+                
+                <div class="selection-card compact" data-value="intern">
+                    <div class="card-icon">🎓</div>
+                    <h3 class="card-title">인턴</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3단계: 산업/업종 선택 -->
+        <div class="selection-step" data-step="3">
+            <div class="step-header">
+                <h2 class="step-title">산업/업종을 선택해주세요</h2>
+                <p class="step-subtitle">업종별 특성을 반영한 실제적인 시나리오를 생성합니다.</p>
+                
+                <div class="search-box">
+                    <input type="text" placeholder="업종을 검색하세요..." class="search-input">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20">
+                        <path fill="currentColor" d="M12.9 14.32a8 8 0 111.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 108 2a6 6 0 000 12z"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="category-tabs">
+                <button class="tab-button active" data-category="all">전체</button>
+                <button class="tab-button" data-category="manufacturing">제조업</button>
+                <button class="tab-button" data-category="service">서비스업</button>
+                <button class="tab-button" data-category="it">IT/기술</button>
+                <button class="tab-button" data-category="finance">금융업</button>
+                <button class="tab-button" data-category="public">공공기관</button>
+            </div>
+            
+            <div class="selection-grid grid-small">
+                <!-- 제조업 -->
+                <div class="selection-card small" data-value="automotive" data-category="manufacturing">
+                    <div class="card-icon">🚗</div>
+                    <h3 class="card-title">자동차</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="electronics" data-category="manufacturing">
+                    <div class="card-icon">📱</div>
+                    <h3 class="card-title">전자/전기</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="chemical" data-category="manufacturing">
+                    <div class="card-icon">⚗️</div>
+                    <h3 class="card-title">화학/소재</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="food" data-category="manufacturing">
+                    <div class="card-icon">🍎</div>
+                    <h3 class="card-title">식품/음료</h3>
+                </div>
+                
+                <!-- 서비스업 -->
+                <div class="selection-card small" data-value="retail" data-category="service">
+                    <div class="card-icon">🛍️</div>
+                    <h3 class="card-title">유통/소매</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="hospitality" data-category="service">
+                    <div class="card-icon">🏨</div>
+                    <h3 class="card-title">호텔/관광</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="logistics" data-category="service">
+                    <div class="card-icon">📦</div>
+                    <h3 class="card-title">물류/운송</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="healthcare" data-category="service">
+                    <div class="card-icon">🏥</div>
+                    <h3 class="card-title">의료/보건</h3>
+                </div>
+                
+                <!-- IT/기술 -->
+                <div class="selection-card small" data-value="software" data-category="it">
+                    <div class="card-icon">💻</div>
+                    <h3 class="card-title">소프트웨어</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="telecom" data-category="it">
+                    <div class="card-icon">📡</div>
+                    <h3 class="card-title">통신</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="gaming" data-category="it">
+                    <div class="card-icon">🎮</div>
+                    <h3 class="card-title">게임</h3>
+                </div>
+                
+                <!-- 금융업 -->
+                <div class="selection-card small" data-value="banking" data-category="finance">
+                    <div class="card-icon">🏦</div>
+                    <h3 class="card-title">은행</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="insurance" data-category="finance">
+                    <div class="card-icon">🛡️</div>
+                    <h3 class="card-title">보험</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="securities" data-category="finance">
+                    <div class="card-icon">📊</div>
+                    <h3 class="card-title">증권</h3>
+                </div>
+                
+                <!-- 공공기관 -->
+                <div class="selection-card small" data-value="government" data-category="public">
+                    <div class="card-icon">🏛️</div>
+                    <h3 class="card-title">정부기관</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="education" data-category="public">
+                    <div class="card-icon">🎓</div>
+                    <h3 class="card-title">교육기관</h3>
+                </div>
+                
+                <div class="selection-card small" data-value="public-enterprise" data-category="public">
+                    <div class="card-icon">⚡</div>
+                    <h3 class="card-title">공기업</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 진행 상황 표시 -->
+        <div class="progress-bar">
+            <div class="progress-track">
+                <div class="progress-fill" style="width: 25%;"></div>
+            </div>
+            <div class="progress-info">
+                <span class="progress-text">1/8 단계</span>
+                <span class="progress-percentage">12.5%</span>
+            </div>
+        </div>
+
+        <!-- 네비게이션 버튼 -->
+        <div class="step-navigation">
+            <button class="btn-secondary" id="prev-step" disabled>이전</button>
+            <button class="btn-primary" id="next-step" disabled>다음</button>
+        </div>
+    </div>
+</div>
