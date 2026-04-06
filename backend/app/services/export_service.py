@@ -20,8 +20,12 @@ def export_to_markdown(scenario: dict, method: str) -> str:
         md = _export_role_playing_md(scenario)
     elif method == "presentation":
         md = _export_presentation_md(scenario)
-    elif method == "group_discussion":
+    elif method in ("group_discussion", "gd_assigned_role"):
         md = _export_group_discussion_md(scenario)
+    elif method == "gd_free_discussion":
+        md = _export_gd_free_discussion_md(scenario)
+    elif method == "case_study":
+        md = _export_case_study_md(scenario)
 
     return md
 
@@ -222,6 +226,98 @@ def _export_group_discussion_md(s: dict) -> str:
                         md += f"| {score}점 | {bars[score]} |\n"
                 md += "\n"
 
+    md += _export_evaluation_criteria(s)
+    md += f"## 진행자 가이드\n\n{s.get('facilitator_guide', '')}\n"
+    return md
+
+
+def _export_gd_free_discussion_md(s: dict) -> str:
+    """자유토론형 집단토론 시나리오를 마크다운으로 변환"""
+    md = f"# 💬 집단토론 (자유토론형): {s.get('title', '자유토론')}\n\n"
+
+    topic = s.get("topic", {})
+    md += "## 1. 토론 주제\n\n"
+    md += f"### {topic.get('statement', '')}\n\n"
+    md += f"{topic.get('full_text', topic.get('background', ''))}\n\n"
+
+    materials = s.get("materials", s.get("common_materials", []))
+    if materials:
+        md += f"## 2. 공통 자료 ({len(materials)}건)\n\n"
+        for mat in materials:
+            md += f"### {mat.get('title', '')}\n"
+            md += f"{mat.get('content', '')}\n\n---\n\n"
+
+    guide = s.get("discussion_guide", {})
+    if guide:
+        md += "## 3. 토론 진행 가이드\n\n"
+        for phase in guide.get("phases", []):
+            md += f"### {phase.get('name', '')}\n"
+            md += f"- 시간: {phase.get('duration', '')}분\n"
+            md += f"- 활동: {phase.get('activity', '')}\n\n"
+
+    rules = s.get("discussion_rules", {})
+    md += "## 4. 토론 규칙\n\n"
+    md += f"- **시간**: {rules.get('duration', '')}분\n"
+    md += f"- **형식**: {rules.get('format', '')}\n"
+    md += f"- **목표**: {rules.get('goal', '')}\n"
+    for rule in rules.get("rules", []):
+        md += f"- {rule}\n"
+    md += "\n"
+
+    md += _export_evaluation_criteria(s)
+    md += f"## 진행자 가이드\n\n{s.get('facilitator_guide', '')}\n"
+    return md
+
+
+def _export_case_study_md(s: dict) -> str:
+    """Case Study 시나리오를 마크다운으로 변환"""
+    md = f"# 📋 Case Study: {s.get('title', '사례분석')}\n\n"
+
+    # 사례 개요
+    overview = s.get("case_overview", s.get("background", {}))
+    md += "## 1. 사례 개요\n\n"
+    md += f"{overview.get('full_text', overview.get('situation', ''))}\n\n"
+    if overview.get("company"):
+        md += f"- **기업**: {overview.get('company', '')}\n"
+    if overview.get("industry"):
+        md += f"- **산업**: {overview.get('industry', '')}\n"
+    if overview.get("key_issue"):
+        md += f"- **핵심 이슈**: {overview.get('key_issue', '')}\n"
+    md += "\n"
+
+    # 제공 데이터/자료
+    data = s.get("provided_data", s.get("materials", []))
+    if data:
+        md += f"## 2. 제공 자료 ({len(data)}건)\n\n"
+        for d in data:
+            md += f"### {d.get('title', d.get('id', ''))}\n"
+            md += f"{d.get('content', '')}\n\n---\n\n"
+
+    # 분석 과제
+    tasks = s.get("analysis_tasks", s.get("questions", []))
+    if tasks:
+        md += f"## 3. 분석 과제 ({len(tasks)}개)\n\n"
+        for i, t in enumerate(tasks, 1):
+            if isinstance(t, dict):
+                md += f"### 과제 {i}: {t.get('question', t.get('title', ''))}\n"
+                md += f"{t.get('description', '')}\n"
+                if t.get("guide"):
+                    md += f"- **가이드**: {t.get('guide', '')}\n"
+                md += "\n"
+            else:
+                md += f"### 과제 {i}\n{t}\n\n"
+
+    # 모범답안
+    model_answer = s.get("model_answer", {})
+    if model_answer:
+        md += "## 4. 모범답안 가이드 (평가자용)\n\n"
+        if isinstance(model_answer, dict):
+            for k, v in model_answer.items():
+                md += f"### {k}\n{v}\n\n"
+        elif isinstance(model_answer, str):
+            md += f"{model_answer}\n\n"
+
+    md += _export_evaluation_criteria(s)
     md += f"## 진행자 가이드\n\n{s.get('facilitator_guide', '')}\n"
     return md
 
@@ -270,6 +366,9 @@ def export_package(project_name: str, scenarios: dict) -> BytesIO:
         "role_playing": "02_역할극(Role-playing)",
         "presentation": "03_발표(Presentation)",
         "group_discussion": "04_집단토론(Group Discussion)",
+        "gd_assigned_role": "04_집단토론_역할부여형",
+        "gd_free_discussion": "05_집단토론_자유토론형",
+        "case_study": "06_사례분석(Case Study)",
     }
 
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -297,8 +396,12 @@ def export_package(project_name: str, scenarios: dict) -> BytesIO:
                 _zip_role_playing_docs(zf, project_name, folder, scenario)
             elif method == "presentation":
                 _zip_presentation_docs(zf, project_name, folder, scenario)
-            elif method == "group_discussion":
+            elif method in ("group_discussion", "gd_assigned_role"):
                 _zip_group_discussion_docs(zf, project_name, folder, scenario)
+            elif method == "gd_free_discussion":
+                _zip_gd_free_discussion_docs(zf, project_name, folder, scenario)
+            elif method == "case_study":
+                _zip_case_study_docs(zf, project_name, folder, scenario)
 
         overview += f"\n\n생성일: 자동 생성됨\n"
         zf.writestr(f"{project_name}/README.md", overview)
@@ -408,3 +511,58 @@ def _zip_group_discussion_docs(zf, project_name, folder, scenario):
         sheet += "|--------|" + "|".join(["--------"] * len(observer.get("individual_items", []))) + "|\n"
         sheet += "|        |" + "|".join(["        "] * len(observer.get("individual_items", []))) + "|\n"
         zf.writestr(f"{project_name}/{folder}/평가자용_관찰시트.md", sheet)
+
+
+def _zip_gd_free_discussion_docs(zf, project_name, folder, scenario):
+    """자유토론형 집단토론 개별 문서 생성"""
+    topic = scenario.get("topic", {})
+    zf.writestr(
+        f"{project_name}/{folder}/참가자용_토론주제.md",
+        f"# 토론 주제\n\n{topic.get('full_text', topic.get('background', ''))}\n",
+    )
+
+    materials = scenario.get("materials", scenario.get("common_materials", []))
+    for i, mat in enumerate(materials, 1):
+        title = mat.get("title", f"자료{i}").replace("/", "_")
+        zf.writestr(
+            f"{project_name}/{folder}/공통자료/{title}.md",
+            f"# {mat.get('title', '')}\n\n{mat.get('content', '')}\n",
+        )
+
+
+def _zip_case_study_docs(zf, project_name, folder, scenario):
+    """Case Study 개별 문서 생성"""
+    overview = scenario.get("case_overview", scenario.get("background", {}))
+    zf.writestr(
+        f"{project_name}/{folder}/참가자용_사례개요.md",
+        f"# 사례 개요\n\n{overview.get('full_text', overview.get('situation', ''))}\n",
+    )
+
+    data = scenario.get("provided_data", scenario.get("materials", []))
+    for i, d in enumerate(data, 1):
+        title = d.get("title", f"자료{i}").replace("/", "_")
+        zf.writestr(
+            f"{project_name}/{folder}/제공자료/{title}.md",
+            f"# {d.get('title', '')}\n\n{d.get('content', '')}\n",
+        )
+
+    tasks = scenario.get("analysis_tasks", scenario.get("questions", []))
+    if tasks:
+        task_doc = "# 분석 과제\n\n"
+        for i, t in enumerate(tasks, 1):
+            if isinstance(t, dict):
+                task_doc += f"## 과제 {i}: {t.get('question', t.get('title', ''))}\n"
+                task_doc += f"{t.get('description', '')}\n\n"
+            else:
+                task_doc += f"## 과제 {i}\n{t}\n\n"
+        zf.writestr(f"{project_name}/{folder}/참가자용_분석과제.md", task_doc)
+
+    model_answer = scenario.get("model_answer", {})
+    if model_answer:
+        answer_doc = "# 모범답안 가이드 (평가자용)\n\n"
+        if isinstance(model_answer, dict):
+            for k, v in model_answer.items():
+                answer_doc += f"## {k}\n{v}\n\n"
+        elif isinstance(model_answer, str):
+            answer_doc += f"{model_answer}\n"
+        zf.writestr(f"{project_name}/{folder}/평가자용_모범답안.md", answer_doc)

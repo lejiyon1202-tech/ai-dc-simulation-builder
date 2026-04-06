@@ -18,11 +18,15 @@ def generate_single():
         return jsonify({'success': False, 'message': '요청 데이터가 없습니다.'}), 400
 
     method = data.get('method')
-    if method not in ('in_basket', 'role_playing', 'presentation', 'group_discussion'):
+    valid_methods = (
+        'in_basket', 'role_playing', 'presentation',
+        'group_discussion', 'gd_assigned_role', 'gd_free_discussion', 'case_study'
+    )
+    if method not in valid_methods:
         return jsonify({
             'success': False,
             'message': f'지원하지 않는 기법입니다: {method}. '
-                       'in_basket, role_playing, presentation, group_discussion 중 선택하세요.'
+                       f'{", ".join(valid_methods)} 중 선택하세요.'
         }), 400
 
     params = {
@@ -43,8 +47,11 @@ def generate_single():
     elif method == 'presentation':
         params['prep_time'] = data.get('prep_time')
         params['present_time'] = data.get('present_time')
-    elif method == 'group_discussion':
+    elif method in ('group_discussion', 'gd_assigned_role', 'gd_free_discussion'):
         params['participant_count'] = data.get('participant_count', 5)
+        params['gd_type'] = data.get('gd_type', 'free')
+    elif method == 'case_study':
+        pass
 
     try:
         generator = get_generator()
@@ -58,12 +65,12 @@ def generate_single():
             }
         }), 200
 
-    except ValueError as e:
-        return jsonify({'success': False, 'message': str(e)}), 400
+    except ValueError:
+        return jsonify({'success': False, 'message': '요청 데이터가 올바르지 않습니다.'}), 400
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'시나리오 생성 중 오류가 발생했습니다: {str(e)}'
+            'message': '시나리오 생성 중 오류가 발생했습니다.'
         }), 500
 
 
@@ -94,8 +101,11 @@ def generate_all():
             params['doc_count'] = settings.get('doc_count', 10)
         elif method == 'role_playing':
             params['rounds'] = settings.get('rounds', 2)
-        elif method == 'group_discussion':
+        elif method in ('group_discussion', 'gd_assigned_role', 'gd_free_discussion'):
             params['participant_count'] = settings.get('participant_count', 5)
+            params['gd_type'] = settings.get('gd_type', 'free')
+        elif method == 'case_study':
+            pass
 
     try:
         generator = get_generator()
@@ -109,7 +119,7 @@ def generate_all():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'시나리오 생성 중 오류가 발생했습니다: {str(e)}'
+            'message': '시나리오 생성 중 오류가 발생했습니다.'
         }), 500
 
 
@@ -141,7 +151,7 @@ def regenerate_part():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'재생성 중 오류가 발생했습니다: {str(e)}'
+            'message': '재생성 중 오류가 발생했습니다.'
         }), 500
 
 
@@ -172,7 +182,7 @@ def customize_scenario():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'수정 중 오류가 발생했습니다: {str(e)}'
+            'message': '수정 중 오류가 발생했습니다.'
         }), 500
 
 
@@ -200,7 +210,7 @@ def export_markdown():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'내보내기 중 오류가 발생했습니다: {str(e)}'
+            'message': '내보내기 중 오류가 발생했습니다.'
         }), 500
 
 
@@ -231,5 +241,5 @@ def export_zip_package():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'패키지 생성 중 오류가 발생했습니다: {str(e)}'
+            'message': '패키지 생성 중 오류가 발생했습니다.'
         }), 500

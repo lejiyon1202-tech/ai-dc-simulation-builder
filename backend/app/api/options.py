@@ -25,7 +25,7 @@ def get_evaluation_purposes():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'평가목적 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '평가목적 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/target-levels', methods=['GET'])
@@ -43,7 +43,7 @@ def get_target_levels():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'대상직급 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '대상직급 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/industries', methods=['GET'])
@@ -69,7 +69,7 @@ def get_industries():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'산업업종 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '산업업종 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/job-functions', methods=['GET'])
@@ -95,7 +95,7 @@ def get_job_functions():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'직무 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '직무 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/competencies', methods=['GET'])
@@ -113,7 +113,7 @@ def get_competencies():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'역량 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '역량 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/assessment-methods', methods=['GET'])
@@ -130,7 +130,7 @@ def get_assessment_methods():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'평가 기법 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '평가 기법 조회 중 오류가 발생했습니다.'
         }), 500
 
 @bp.route('/options/all', methods=['GET'])
@@ -187,5 +187,5 @@ def get_all_options():
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'옵션 조회 중 오류가 발생했습니다: {str(e)}'
+            'message': '옵션 조회 중 오류가 발생했습니다.'
         }), 500

@@ -6,9 +6,9 @@ load_dotenv()
 
 class Config:
     """기본 설정"""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-change-in-production'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
@@ -20,24 +20,36 @@ class Config:
     UPLOAD_FOLDER = 'uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
     
-    # Redis 설정
-    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
-    
-    # Celery 설정
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or 'redis://localhost:6379/0'
+    # Redis 설정 (사용 시 환경변수 필수)
+    REDIS_URL = os.environ.get('REDIS_URL')
+
+    # Celery 설정 (사용 시 환경변수 필수)
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
 
 class DevelopmentConfig(Config):
     """개발 환경 설정"""
     DEBUG = True
+    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(32).hex()
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or os.urandom(32).hex()
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
         'sqlite:///dc_simulator_dev.db'
+    CORS_ORIGINS = ['http://localhost:5000', 'http://localhost:3000', 'http://localhost']
 
 class ProductionConfig(Config):
     """운영 환경 설정"""
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://username:password@localhost/dc_simulator'
+
+    @staticmethod
+    def init_app(app):
+        """프로덕션 필수 환경변수 검증"""
+        required = ['SECRET_KEY', 'JWT_SECRET_KEY', 'DATABASE_URL']
+        missing = [k for k in required if not os.environ.get(k)]
+        if missing:
+            raise RuntimeError(f'프로덕션 필수 환경변수 미설정: {", ".join(missing)}')
+
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '')
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '').split(',') if os.environ.get('CORS_ORIGINS') else []
 
 class TestingConfig(Config):
     """테스트 환경 설정"""

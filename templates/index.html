@@ -207,6 +207,34 @@
         .btn-edit-direct.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
         .refine-loading { display: flex; align-items: center; gap: 10px; color: #94a3b8; font-size: 14px; padding: 8px 0; }
 
+        /* 역량x기법 매칭 매트릭스 */
+        .matrix-panel { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .matrix-panel-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #f1f5f9; }
+        .matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .matrix-table th, .matrix-table td { padding: 8px 10px; border: 1px solid #334155; text-align: center; }
+        .matrix-table th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+        .matrix-table th.col-selected { background: #1e3a5f; color: #93c5fd; }
+        .matrix-table td.col-selected { background: #1e3a5f; }
+        .matrix-table td.col-unselected { background: rgba(71,85,105,0.15); color: #475569; }
+        .matrix-table td.cell-match { color: #4ade80; }
+        .matrix-table td.cell-empty { color: #475569; }
+        .matrix-table td.row-header { text-align: left; font-weight: 500; color: #e2e8f0; background: #0f172a; }
+        .matrix-table tr.row-uncovered td { background: rgba(239,68,68,0.1); }
+        .matrix-table tr.row-uncovered td.col-selected { background: rgba(239,68,68,0.15); }
+        .matrix-table tr.row-uncovered td.col-unselected { background: rgba(239,68,68,0.07); }
+        .matrix-table tr.row-uncovered td.row-header { background: rgba(239,68,68,0.1); }
+        .matrix-table td.status-covered { color: #4ade80; font-size: 12px; font-weight: 500; white-space: nowrap; }
+        .matrix-table td.status-uncovered { color: #ef4444; font-size: 12px; font-weight: 500; white-space: nowrap; }
+        .matrix-summary { margin-top: 12px; font-size: 14px; font-weight: 500; }
+        .matrix-summary.all-covered { color: #4ade80; }
+        .matrix-summary.has-uncovered { color: #ef4444; }
+        .matrix-suggestion { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-size: 13px; color: #93c5fd; }
+        .matrix-suggestion-title { font-weight: 600; margin-bottom: 8px; }
+        .matrix-suggestion ul { margin: 0; padding-left: 18px; }
+        .matrix-suggestion li { margin-bottom: 4px; }
+        .matrix-suggestion .suggest-method { color: #60a5fa; cursor: pointer; text-decoration: underline; transition: color 0.2s; }
+        .matrix-suggestion .suggest-method:hover { color: #93c5fd; }
+
         @media (max-width: 1200px) { .summary-bar { display: none; } }
     </style>
 </head>
@@ -216,6 +244,11 @@
             <h1>DC Simulation Builder</h1>
             <div class="subtitle">AI 기반 Development Center 시뮬레이션 설계 도구</div>
         </div>
+        <a href="/discussion" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;padding:12px 24px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 12px rgba(124,58,237,0.3);" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(124,58,237,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(124,58,237,0.3)'">
+            <span style="font-size:18px;">&#x1F4AC;</span>
+            <span>AI 집단토론 시뮬레이션</span>
+            <span style="font-size:11px;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;">NEW</span>
+        </a>
     </div>
     <div class="progress-bar"><div class="steps" id="stepBar"></div></div>
     <div class="main" id="mainContent"></div>
@@ -307,6 +340,7 @@ const DATA = {
             '시스템 사고':'전체 시스템의 상호 연관성을 이해하고 통합적으로 판단하는 능력',
             '사업감각':'시장, 경쟁, 고객 동향을 파악하여 사업 기회를 포착하는 능력',
             '조직문화 형성':'바람직한 조직 문화를 설계하고 정착시키는 능력',
+            '디지털 혁신':'디지털 기술을 활용하여 업무와 프로세스를 혁신하는 능력',
         }},
         '사고/분석': {color:'#8b5cf6', items: {
             '분석적 사고':'복잡한 정보와 데이터를 체계적으로 분석하여 의미를 도출하는 능력',
@@ -318,6 +352,7 @@ const DATA = {
             '통찰력':'표면적 현상 너머의 본질과 패턴을 간파하는 능력',
             '기획력':'목표 달성을 위한 체계적인 계획을 수립하는 능력',
             '정보수집/활용':'필요한 정보를 효과적으로 수집하고 활용하는 능력',
+            '데이터 활용':'데이터를 기반으로 의사결정하고 인사이트를 도출하는 능력',
         }},
         '조직/인력 관리': {color:'#3b82f6', items: {
             '동기부여':'구성원들의 내적 동기를 자극하고 자발적 몰입을 이끌어내는 능력',
@@ -331,11 +366,10 @@ const DATA = {
             '솔선수범':'모범적 행동으로 조직의 가치와 기준을 실천하는 능력',
         }},
         '조정/통합': {color:'#0891b2', items: {
-            '조정/통합':'서로 다른 부서, 기능, 의견을 조율하여 하나의 방향으로 통합하는 능력',
+            '통합조율':'서로 다른 부서, 기능, 의견을 조율하여 하나의 방향으로 통합하는 능력',
             '이해관계자관리':'다양한 이해관계자의 요구를 파악하고 균형 있게 조율하는 능력',
-            '갈등관리':'조직 내 구조적 갈등을 건설적으로 해결하고 관계를 회복하는 능력',
+            '갈등관리':'대인 간 및 조직 내 갈등 상황을 건설적으로 해결하고 관계를 회복하는 능력',
             '협상력':'이해관계가 다른 상황에서 최적의 합의를 이끌어내는 능력',
-            '네트워킹':'업무에 필요한 인적 네트워크를 구축하고 활용하는 능력',
             '영향력':'직위에 의존하지 않고 논리와 관계로 타인의 행동을 이끄는 능력',
             '합의도출':'다양한 의견을 수렴하여 구성원들이 수용 가능한 결론을 이끌어내는 능력',
             '부서간 협업':'부서 경계를 넘어 공동 목표를 위해 협력을 촉진하는 능력',
@@ -346,15 +380,13 @@ const DATA = {
             '공감능력':'타인의 감정과 입장을 이해하고 적절히 반응하는 능력',
             '설득력':'논리와 감성을 활용하여 상대방의 동의와 지지를 얻는 능력',
             '프레젠테이션':'청중에게 정보를 효과적으로 전달하고 설득하는 발표 능력',
-            '갈등해결':'대인 간 갈등 상황을 원만하게 조정하고 해결하는 능력',
             '고객지향':'내/외부 고객의 니즈를 파악하고 만족을 극대화하는 능력',
             '팀워크/협업':'팀 목표 달성을 위해 적극적으로 협력하고 기여하는 능력',
         }},
         '실행/성과': {color:'#f59e0b', items: {
-            '목표지향':'명확한 목표를 설정하고 달성을 위해 집중하는 능력',
+            '목표/결과지향':'명확한 목표를 설정하고 성과 달성에 집중하며, 과정보다 결과에 초점을 맞추는 능력',
             '추진력/실행력':'계획을 신속하고 효과적으로 실행에 옮기는 능력',
             '책임감':'맡은 업무에 대해 끝까지 책임지고 완수하는 태도',
-            '결과지향':'과정보다 결과에 초점을 맞추고 성과를 창출하는 능력',
             '시간관리':'한정된 시간 내에서 업무 우선순위를 설정하고 효율적으로 처리하는 능력',
             '업무조직화':'복잡한 업무를 체계적으로 구조화하고 관리하는 능력',
             '위기관리':'예상치 못한 위기 상황에서 침착하게 대응하고 해결하는 능력',
@@ -366,22 +398,12 @@ const DATA = {
             '스트레스관리':'높은 압박 상황에서도 평정심을 유지하고 효과적으로 대처하는 능력',
             '감정조절':'감정을 적절히 관리하고 상황에 맞게 표현하는 능력',
             '적응력/유연성':'변화하는 환경과 상황에 유연하게 대응하는 능력',
-            '회복탄력성':'실패나 좌절 후 빠르게 회복하고 교훈을 얻는 능력',
             '자기인식':'자신의 강점, 약점, 감정을 객관적으로 인식하는 능력',
             '자기개발':'지속적으로 학습하고 성장하려는 태도와 실행력',
-            '자기동기부여':'외부 자극 없이도 스스로 동기를 부여하고 몰입하는 능력',
-            '윤리의식':'도덕적 기준과 직업 윤리를 준수하는 태도',
-            '프로페셔널리즘':'전문가로서의 태도와 행동 기준을 일관되게 유지하는 능력',
-            '긍정적 태도':'어려운 상황에서도 낙관적 시각을 유지하는 성향',
         }},
-        '글로벌/디지털': {color:'#ec4899', items: {
-            '글로벌 마인드':'다양한 문화와 글로벌 환경을 이해하고 적응하는 능력',
-            '다문화 이해':'다양한 문화적 배경을 가진 사람들과 효과적으로 협력하는 능력',
-            '디지털 리터러시':'디지털 도구와 기술을 이해하고 업무에 활용하는 능력',
-            '데이터 활용':'데이터를 기반으로 의사결정하고 인사이트를 도출하는 능력',
-            '외국어 소통':'외국어로 효과적으로 의사소통하는 능력',
-            '디지털 혁신':'디지털 기술을 활용하여 업무와 프로세스를 혁신하는 능력',
-            '원격 협업':'비대면 환경에서도 효과적으로 소통하고 협력하는 능력',
+        '가치/태도': {color:'#94a3b8', items: {
+            '윤리의식':'도덕적 기준과 직업 윤리를 준수하며 올바른 의사결정을 내리는 태도',
+            '프로페셔널리즘':'전문가로서의 태도와 행동 기준을 일관되게 유지하는 능력',
         }},
     },
     // 기법별 잘 측정하는 역량
@@ -400,50 +422,47 @@ const DATA = {
     //   → 집단 내 상호작용, 리더십, 협업 역량이 주로 관찰됨
     methodCompetencyMatch: {
         in_basket: [
-            // 핵심: 혼자 서류를 읽고 판단/처리하는 과제
+            // 주요 측정: 혼자 서류를 읽고 우선순위 판단·처리하는 인지/실행 과제
             '의사결정','판단력','시간관리','업무조직화','위임',
             '문제해결','기획력','분석적 사고','정보수집/활용',
-            '목표지향','책임감','프로세스관리','자원관리','위기관리',
-            '결과지향','성과관리','전략적 사고','통찰력','주도성',
-            '윤리의식','품질지향',
+            '목표/결과지향','책임감','프로세스관리','자원관리','위기관리',
+            '성과관리','전략적 사고','통찰력','주도성','품질지향','윤리의식',
         ],
         role_playing: [
-            // 핵심: 1:1 대면 상호작용 과제
-            '커뮤니케이션','경청','공감능력','갈등해결','갈등관리',
+            // 주요 측정: 1:1 대면 상호작용에서 대인관계·감정 역량
+            '커뮤니케이션','경청','공감능력','갈등관리',
             '설득력','협상력','감정조절','피드백 제공',
             '코칭/육성','고객지향','동기부여','이해관계자관리',
-            '적응력/유연성','프로페셔널리즘','윤리의식',
-            '스트레스관리','자기인식',
+            '적응력/유연성','프로페셔널리즘','스트레스관리','자기인식','임파워먼트',
         ],
         presentation: [
-            // 핵심: 자료 분석 후 발표/질의응답 과제
+            // 주요 측정: 자료 분석·발표·Q&A에서 분석력·전달력·전략적 사고
             '프레젠테이션','분석적 사고','논리적 사고','전략적 사고',
             '기획력','설득력','커뮤니케이션','비전 제시',
             '데이터 활용','창의적 사고','통찰력','시스템 사고',
             '스트레스관리','자기인식','혁신지향','사업감각',
-            '자기개발',
         ],
         gd_assigned_role: [
-            // 핵심: 각자 입장을 가지고 합의 도출
-            '협상력','설득력','갈등해결','갈등관리','합의도출',
-            '조정/통합','이해관계자관리','부서간 협업',
+            // 주요 측정: 역할별 입장 방어·협상·합의 도출 과정의 조정 역량
+            '협상력','설득력','갈등관리','합의도출',
+            '통합조율','이해관계자관리','부서간 협업',
             '커뮤니케이션','경청','영향력','논리적 사고',
             '적응력/유연성','공감능력','스트레스관리',
         ],
         gd_free_discussion: [
-            // 핵심: 동일 자료 기반 협업적 문제해결
+            // 주요 측정: 공동 문제해결 과정의 리더십·협업·창의성
             '팀워크/협업','경청','커뮤니케이션','창의적 사고',
             '문제해결','주도성','팀빌딩','솔선수범',
-            '영향력','네트워킹','공감능력','합의도출',
-            '적응력/유연성','목표지향',
+            '영향력','공감능력','합의도출',
+            '적응력/유연성','목표/결과지향',
         ],
         case_study: [
-            // 핵심: 복잡한 비즈니스 사례를 분석하고 대안을 제시하는 과제
+            // 주요 측정: 복잡한 비즈니스 사례의 전략적 분석·대안 수립
             '전략적 사고','분석적 사고','논리적 사고','문제해결','의사결정',
             '판단력','통찰력','시스템 사고','기획력','사업감각',
             '창의적 사고','정보수집/활용','데이터 활용',
             '혁신지향','비전 제시','변화관리','조직문화 형성',
-            '자원관리','위기관리','결과지향',
+            '자원관리','위기관리','목표/결과지향','디지털 혁신',
         ],
     },
 };
@@ -732,6 +751,134 @@ function getMatchedCompetencies(method) {
 }
 
 // ═══════════════════════════════════════════
+// 역량x기법 매칭 매트릭스
+// ═══════════════════════════════════════════
+
+const METHOD_KEYS_ORDERED = ['in_basket','role_playing','presentation','gd_assigned_role','gd_free_discussion','case_study'];
+const METHOD_ABBRS = {
+    in_basket: 'IB', role_playing: 'RP', presentation: 'PT',
+    gd_assigned_role: 'GD역', gd_free_discussion: 'GD자', case_study: 'CS'
+};
+const METHOD_FULL_NAMES = {
+    in_basket: 'In-basket', role_playing: 'Role-playing', presentation: 'Presentation',
+    gd_assigned_role: '집단토론-역할부여형', gd_free_discussion: '집단토론-자유토론형', case_study: 'Case Study'
+};
+
+function getUncoveredCompetencies() {
+    const selectedMethods = METHOD_KEYS_ORDERED.filter(k => state.methods[k].enabled);
+    if (selectedMethods.length === 0) return [...state.competencies];
+    return state.competencies.filter(comp => {
+        return !selectedMethods.some(method => {
+            const matchComps = DATA.methodCompetencyMatch[method] || [];
+            return matchComps.includes(comp);
+        });
+    });
+}
+
+function getCoveredCompetencies() {
+    const selectedMethods = METHOD_KEYS_ORDERED.filter(k => state.methods[k].enabled);
+    if (selectedMethods.length === 0) return [];
+    return state.competencies.filter(comp => {
+        return selectedMethods.some(method => {
+            const matchComps = DATA.methodCompetencyMatch[method] || [];
+            return matchComps.includes(comp);
+        });
+    });
+}
+
+function buildCompetencyMethodMatrix() {
+    const competencies = state.competencies;
+    if (competencies.length === 0) return '';
+
+    const selectedMethods = METHOD_KEYS_ORDERED.filter(k => state.methods[k].enabled);
+    const coveredComps = getCoveredCompetencies();
+    const uncoveredComps = getUncoveredCompetencies();
+
+    // 테이블 헤더
+    let thead = '<tr><th style="text-align:left;">역량 \\ 기법</th>';
+    for (const mk of METHOD_KEYS_ORDERED) {
+        const isSelected = state.methods[mk].enabled;
+        thead += `<th class="${isSelected ? 'col-selected' : ''}">${METHOD_ABBRS[mk]}</th>`;
+    }
+    thead += '<th>상태</th></tr>';
+
+    // 테이블 본문
+    let tbody = '';
+    for (const comp of competencies) {
+        const isCovered = coveredComps.includes(comp);
+        const rowClass = !isCovered && selectedMethods.length > 0 ? 'row-uncovered' : '';
+        tbody += `<tr class="${rowClass}">`;
+        tbody += `<td class="row-header">${comp}</td>`;
+        for (const mk of METHOD_KEYS_ORDERED) {
+            const matchComps = DATA.methodCompetencyMatch[mk] || [];
+            const hasMatch = matchComps.includes(comp);
+            const isSelected = state.methods[mk].enabled;
+            const colCls = isSelected ? 'col-selected' : 'col-unselected';
+            const cellCls = hasMatch ? 'cell-match' : 'cell-empty';
+            tbody += `<td class="${colCls} ${cellCls}">${hasMatch ? '\u2705' : '\u2500'}</td>`;
+        }
+        // 상태 열
+        if (selectedMethods.length === 0) {
+            tbody += '<td style="color:#94a3b8;font-size:12px;">\u2500</td>';
+        } else if (isCovered) {
+            tbody += '<td class="status-covered">\u2190 \ucee4\ubc84\ub428</td>';
+        } else {
+            tbody += '<td class="status-uncovered">\u2190 \ubbf8\ucee4\ubc84</td>';
+        }
+        tbody += '</tr>';
+    }
+
+    // 요약
+    const total = competencies.length;
+    const coveredCount = coveredComps.length;
+    let summaryHtml = '';
+    if (selectedMethods.length === 0) {
+        summaryHtml = '<div class="matrix-summary" style="color:#94a3b8;">기법을 선택하면 커버리지가 표시됩니다.</div>';
+    } else if (uncoveredComps.length === 0) {
+        summaryHtml = `<div class="matrix-summary all-covered">\u2705 ${coveredCount}/${total} 역량 커버됨</div>`;
+    } else {
+        summaryHtml = `<div class="matrix-summary has-uncovered">\u26a0\ufe0f ${coveredCount}/${total} 역량 커버됨 \u00b7 미커버: ${uncoveredComps.join(', ')}</div>`;
+    }
+
+    // 미커버 역량에 대한 추가 제안
+    let suggestionHtml = '';
+    if (selectedMethods.length > 0 && uncoveredComps.length > 0) {
+        let suggestions = [];
+        for (const comp of uncoveredComps) {
+            const availableMethods = [];
+            for (const mk of METHOD_KEYS_ORDERED) {
+                const matchComps = DATA.methodCompetencyMatch[mk] || [];
+                if (matchComps.includes(comp) && !state.methods[mk].enabled) {
+                    availableMethods.push(mk);
+                }
+            }
+            if (availableMethods.length > 0) {
+                const links = availableMethods.map(mk =>
+                    `<span class="suggest-method" onclick="toggleMethod('${mk}');render();">${METHOD_FULL_NAMES[mk]}</span>`
+                ).join(' 또는 ');
+                suggestions.push(`<li>"${comp}" \u2192 ${links}\uc744(\ub97c) 추가하면 측정 가능합니다</li>`);
+            }
+        }
+        if (suggestions.length > 0) {
+            suggestionHtml = `<div class="matrix-suggestion">
+                <div class="matrix-suggestion-title">\ud83d\udca1 추가 측정 제안</div>
+                <ul>${suggestions.join('')}</ul>
+            </div>`;
+        }
+    }
+
+    return `<div class="matrix-panel">
+        <div class="matrix-panel-title">\ud83d\udcca 역량 \u00d7 기법 매칭 현황</div>
+        <table class="matrix-table">
+            <thead>${thead}</thead>
+            <tbody>${tbody}</tbody>
+        </table>
+        ${summaryHtml}
+        ${suggestionHtml}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
 // 렌더링
 // ═══════════════════════════════════════════
 
@@ -897,8 +1044,16 @@ function renderMethods() {
     Object.values(DATA.methodCompetencyMatch).forEach(comps => comps.forEach(c => allMatchedComps.add(c)));
     const unmatchedComps = state.competencies.filter(c => !allMatchedComps.has(c));
 
+    // 매트릭스 생성
+    const matrixHtml = buildCompetencyMethodMatrix();
+
     let html = `<h2 class="section-title">평가 기법을 선택하세요</h2>
         <p class="section-desc">선택한 역량에 따라 추천 기법이 상단에 표시됩니다.</p>`;
+
+    // 매트릭스 패널 삽입 (역량이 선택된 경우에만)
+    if (state.competencies.length > 0) {
+        html += matrixHtml;
+    }
 
     if (unmatchedComps.length > 0) {
         html += `<div style="background:rgba(234,179,8,0.1); border:1px solid rgba(180,84,0,0.27); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#fbbf24;">
@@ -1195,11 +1350,15 @@ function select(field, value) { state[field] = value; render(); }
 function toggleComp(comp) { const i = state.competencies.indexOf(comp); if (i>=0) state.competencies.splice(i,1); else state.competencies.push(comp); render(); }
 function toggleMethod(key) { state.methods[key].enabled = !state.methods[key].enabled; render(); }
 function setMethodOpt(method, key, value) { state.methods[method][key] = parseInt(value); }
-function goStep(n) { state.step = n; render(); }
-function nextStep() { if (state.step < 7) state.step++; render(); }
-function prevStep() { if (state.step > 1) state.step--; render(); }
+function goStep(n) {
+    // 이전 단계로는 자유롭게, 앞 단계로는 현재 단계까지만
+    if (n > state.step + 1) return;
+    state.step = n; render(); window.scrollTo(0, 0);
+}
+function nextStep() { if (state.step < 7) { state.step++; render(); window.scrollTo(0, 0); } }
+function prevStep() { if (state.step > 1) { state.step--; render(); window.scrollTo(0, 0); } }
 function switchTab(tab) { state.activeResultTab = tab; render(); }
-function resetAll() { state = {step:1,purpose:'',level:'',industry:'',job:'',competencies:[],methods:{in_basket:{enabled:false,duration:30,difficulty:3,doc_count:10},role_playing:{enabled:false,duration:20,difficulty:3,rounds:2},presentation:{enabled:false,duration:30,difficulty:3},group_discussion:{enabled:false,duration:40,difficulty:3,participant_count:5},case_study:{enabled:false,duration:45,difficulty:3}},results:{},generating:false,activeResultTab:null,editMode:false,custom:{levels:[],industries:{},jobs:{},competencies:{}}}; render(); }
+function resetAll() { state = {step:1,purpose:'',level:'',industry:'',job:'',competencies:[],methods:{in_basket:{enabled:false,duration:30,difficulty:3,doc_count:10},role_playing:{enabled:false,duration:20,difficulty:3,rounds:2},presentation:{enabled:false,duration:30,difficulty:3},gd_assigned_role:{enabled:false,duration:40,difficulty:3},gd_free_discussion:{enabled:false,duration:40,difficulty:3,participant_count:5},case_study:{enabled:false,duration:45,difficulty:3}},results:{},generating:false,activeResultTab:null,editMode:false,custom:{levels:[],industries:{},jobs:{},competencies:{}}}; render(); }
 
 function navButtons() {
     const warning = getStepWarning();
@@ -1220,7 +1379,10 @@ function getStepWarning() {
         case 5: return state.competencies.length === 0 ? '&#9888; 평가 역량은 반드시 1개 이상 선택해야 합니다.' : (state.competencies.length < 4 ? '역량을 4개 이상 선택하면 더 풍부한 평가 기준이 생성됩니다.' : '');
         case 6: {
             const enabled = Object.values(state.methods).filter(m => m.enabled).length;
-            return enabled === 0 ? '&#9888; 최소 1개 이상의 기법을 선택해야 합니다.' : '';
+            if (enabled === 0) return '&#9888; 최소 1개 이상의 기법을 선택해야 합니다.';
+            const uncovered = getUncoveredCompetencies();
+            if (uncovered.length > 0) return `&#9888; 다음 역량이 선택된 기법으로 측정되지 않습니다: ${uncovered.join(', ')}. 추가 기법을 선택하거나, 이대로 진행할 수 있습니다.`;
+            return '';
         }
         default: return '';
     }
@@ -1237,6 +1399,12 @@ function tryNextStep() {
         if (enabled === 0) {
             alert('최소 1개 이상의 기법을 선택해주세요.');
             return;
+        }
+        const uncovered = getUncoveredCompetencies();
+        if (uncovered.length > 0) {
+            if (!confirm(`다음 역량이 측정되지 않습니다: ${uncovered.join(', ')}.\n이대로 진행하시겠습니까?`)) {
+                return;
+            }
         }
     }
     nextStep();
@@ -1265,9 +1433,11 @@ async function startGenerate() {
         if (el) el.textContent = `${names[method]} 생성 중... (${enabledMethods.indexOf(method)+1}/${enabledMethods.length})`;
         try {
             const res = await fetch('/api/generate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,params:{evaluation_purpose:state.purpose,target_level:state.level,industry:state.industry,job_function:state.job,competencies:state.competencies,difficulty:state.methods[method].difficulty,duration:state.methods[method].duration,doc_count:state.methods[method].doc_count,rounds:state.methods[method].rounds,participant_count:state.methods[method].participant_count}})});
+            if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || `HTTP ${res.status}`); }
             const data = await res.json();
             if (data.success) state.results[method] = data.scenario;
-        } catch (e) { console.error(method, e); }
+            else if (el) el.textContent = `${names[method]} 생성 실패: ${data.error || '알 수 없는 오류'}`;
+        } catch (e) { console.error(method, e); if (el) el.textContent = `${names[method]} 오류: ${e.message}`; }
     }
     state.generating = false; state.activeResultTab = enabledMethods[0]; render();
 }
@@ -1339,6 +1509,7 @@ async function submitRefine() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({method: tab, scenario: state.results[tab], instruction})
         });
+        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || `HTTP ${res.status}`); }
         const data = await res.json();
         if (data.success) {
             state.results[tab] = data.scenario;

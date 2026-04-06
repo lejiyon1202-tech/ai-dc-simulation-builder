@@ -108,6 +108,16 @@ class ScenarioGenerator:
             elif method == "group_discussion":
                 method_params.setdefault("duration", 40)
                 method_params.setdefault("participant_count", 5)
+            elif method == "gd_assigned_role":
+                method_params.setdefault("duration", 45)
+                method_params.setdefault("participant_count", 5)
+                method_params.setdefault("gd_type", "assigned_role")
+            elif method == "gd_free_discussion":
+                method_params.setdefault("duration", 45)
+                method_params.setdefault("participant_count", 5)
+                method_params.setdefault("gd_type", "free")
+            elif method == "case_study":
+                method_params.setdefault("duration", 60)
 
             try:
                 results[method] = self.generate(method, method_params)

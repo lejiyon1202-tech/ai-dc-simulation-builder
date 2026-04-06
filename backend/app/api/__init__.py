@@ -2,4 +2,4 @@ from flask import Blueprint
 
 bp = Blueprint('api', __name__)
 
-from app.api import projects, options, generate
+from app.api import auth, projects, options, generate, discussion, compat

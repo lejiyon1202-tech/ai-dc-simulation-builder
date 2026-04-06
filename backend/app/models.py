@@ -16,6 +16,7 @@ class User(db.Model):
     
     # 관계
     projects = db.relationship('Project', backref='user', lazy=True, cascade='all, delete-orphan')
+    discussion_sessions = db.relationship('DiscussionSession', backref='user', lazy=True)
     
     def to_dict(self):
         return {
@@ -262,6 +263,157 @@ class Competency(db.Model):
             'behavioral_indicators': json.loads(self.behavioral_indicators) if self.behavioral_indicators else [],
             'is_active': self.is_active
         }
+
+class DiscussionSession(db.Model):
+    """Group Discussion 토론 세션 모델"""
+    __tablename__ = 'discussion_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # 토론 주제 정보
+    topic_title = db.Column(db.String(300), nullable=False)
+    topic_description = db.Column(db.Text)
+    topic_type = db.Column(db.String(50), nullable=False)  # resource_allocation / policy_decision / crisis_response / priority_setting
+    industry = db.Column(db.String(100))
+    target_level = db.Column(db.String(50))
+    difficulty = db.Column(db.Integer, default=3)  # 1-5 난이도
+
+    # 참가자(사용자) 역할 정보
+    participant_role = db.Column(db.String(200))
+    participant_role_description = db.Column(db.Text)
+    participant_materials = db.Column(db.Text)  # JSON 형태로 참가자 전용 자료 저장
+
+    # AI 참가자 1 정보
+    ai1_name = db.Column(db.String(100))
+    ai1_role = db.Column(db.String(200))
+    ai1_role_description = db.Column(db.Text)
+    ai1_style = db.Column(db.String(50))  # analytical_assertive
+    ai1_materials = db.Column(db.Text)  # JSON 형태로 AI 1 전용 자료 저장
+
+    # AI 참가자 2 정보
+    ai2_name = db.Column(db.String(100))
+    ai2_role = db.Column(db.String(200))
+    ai2_role_description = db.Column(db.Text)
+    ai2_style = db.Column(db.String(50))  # collaborative_mediating
+    ai2_materials = db.Column(db.Text)  # JSON 형태로 AI 2 전용 자료 저장
+
+    # 공통 자료 및 역량
+    common_materials = db.Column(db.Text)  # JSON 형태로 공통 자료 저장
+    competencies = db.Column(db.Text)  # JSON 형태로 평가 대상 역량 목록 저장
+
+    # 세션 상태 관리
+    status = db.Column(db.String(50), default='preparing')  # preparing / briefing / intro / discussion / consensus / summary / evaluating / completed
+    current_phase_end_time = db.Column(db.DateTime, nullable=True)
+    total_duration = db.Column(db.Integer, default=30)  # 총 토론 시간(분)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 관계
+    project = db.relationship('Project', backref='discussion_sessions')
+    messages = db.relationship('DiscussionMessage', backref='session', lazy=True,
+                               cascade='all, delete-orphan', order_by='DiscussionMessage.sequence_number')
+    evaluation = db.relationship('SessionEvaluation', backref='session', uselist=False,
+                                 cascade='all, delete-orphan')
+
+    def to_dict(self, include_messages=False, include_evaluation=False):
+        result = {
+            'id': self.id,
+            'project_id': self.project_id,
+            'user_id': self.user_id,
+            'topic_title': self.topic_title,
+            'topic_description': self.topic_description,
+            'topic_type': self.topic_type,
+            'industry': self.industry,
+            'target_level': self.target_level,
+            'difficulty': self.difficulty,
+            'participant_role': self.participant_role,
+            'participant_role_description': self.participant_role_description,
+            'participant_materials': json.loads(self.participant_materials) if self.participant_materials else None,
+            'ai1_name': self.ai1_name,
+            'ai1_role': self.ai1_role,
+            'ai1_role_description': self.ai1_role_description,
+            'ai1_style': self.ai1_style,
+            'ai1_materials': json.loads(self.ai1_materials) if self.ai1_materials else None,
+            'ai2_name': self.ai2_name,
+            'ai2_role': self.ai2_role,
+            'ai2_role_description': self.ai2_role_description,
+            'ai2_style': self.ai2_style,
+            'ai2_materials': json.loads(self.ai2_materials) if self.ai2_materials else None,
+            'common_materials': json.loads(self.common_materials) if self.common_materials else None,
+            'competencies': json.loads(self.competencies) if self.competencies else [],
+            'status': self.status,
+            'current_phase_end_time': self.current_phase_end_time.isoformat() if self.current_phase_end_time else None,
+            'total_duration': self.total_duration,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+        }
+        if include_messages:
+            result['messages'] = [m.to_dict() for m in self.messages]
+        if include_evaluation and self.evaluation:
+            result['evaluation'] = self.evaluation.to_dict()
+        return result
+
+
+class DiscussionMessage(db.Model):
+    """토론 메시지 모델"""
+    __tablename__ = 'discussion_messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('discussion_sessions.id'), nullable=False)
+    sender_type = db.Column(db.String(20), nullable=False)  # user / ai1 / ai2 / system
+    sender_name = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(50), default='statement')  # statement / question / rebuttal / agreement / summary / facilitation
+    phase = db.Column(db.String(50))  # 메시지가 속한 토론 단계
+    sequence_number = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'sender_type': self.sender_type,
+            'sender_name': self.sender_name,
+            'content': self.content,
+            'message_type': self.message_type,
+            'phase': self.phase,
+            'sequence_number': self.sequence_number,
+            'created_at': self.created_at.isoformat(),
+        }
+
+
+class SessionEvaluation(db.Model):
+    """세션 평가 결과 모델"""
+    __tablename__ = 'session_evaluations'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('discussion_sessions.id'), nullable=False, unique=True)
+    overall_score = db.Column(db.Float)  # 종합 점수
+    competency_scores = db.Column(db.Text)  # JSON: {역량명: {score, weight, behavioral_examples: []}}
+    strengths = db.Column(db.Text)  # JSON: [{competency, description, evidence}]
+    development_areas = db.Column(db.Text)  # JSON: [{competency, description, evidence, suggestion}]
+    detailed_feedback = db.Column(db.Text)  # 역량별 상세 피드백
+    development_guide = db.Column(db.Text)  # JSON 형태로 개발 가이드 저장
+    participation_stats = db.Column(db.Text)  # JSON: {total_messages, avg_length, phase_distribution, ...}
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'overall_score': self.overall_score,
+            'competency_scores': json.loads(self.competency_scores) if self.competency_scores else {},
+            'strengths': json.loads(self.strengths) if self.strengths else [],
+            'development_areas': json.loads(self.development_areas) if self.development_areas else [],
+            'detailed_feedback': self.detailed_feedback,
+            'development_guide': json.loads(self.development_guide) if self.development_guide else None,
+            'participation_stats': json.loads(self.participation_stats) if self.participation_stats else {},
+            'created_at': self.created_at.isoformat(),
+        }
+
 
 class GenerationHistory(db.Model):
     """AI 생성 히스토리 모델"""

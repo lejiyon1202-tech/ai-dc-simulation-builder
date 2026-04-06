@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 집단토론 시뮬레이션</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        /* ─── 공통 ─── */
+        .hidden { display: none !important; }
+        a { color: #60a5fa; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ─── 설정 화면 ─── */
+        .setup-screen {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .setup-header h1 {
+            font-size: 32px;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .setup-header .accent { color: #a78bfa; }
+        .setup-header p {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+        .setup-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+        .setup-back:hover { color: #e2e8f0; text-decoration: none; }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .form-select {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            cursor: pointer;
+        }
+        .form-select:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 2px rgba(124,58,237,0.2);
+        }
+
+        .type-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .type-card {
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .type-card:hover { border-color: #7c3aed; background: #1e2040; }
+        .type-card.selected { border-color: #7c3aed; background: #2e1065; box-shadow: 0 0 16px rgba(124,58,237,0.2); }
+        .type-card .tc-icon { font-size: 24px; margin-bottom: 6px; }
+        .type-card .tc-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .type-card .tc-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+        .difficulty-wrap {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .difficulty-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+        }
+        .difficulty-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #7c3aed;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(124,58,237,0.4);
+        }
+        .difficulty-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #a78bfa;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .btn-start {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+        .btn-start:hover { background: linear-gradient(135deg, #6d28d9, #5b21b6); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
+        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* ─── 로딩 화면 ─── */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 24px;
+        }
+        .loading-spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid #334155;
+            border-top-color: #7c3aed;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #94a3b8; font-size: 16px; }
+        .loading-sub { color: #64748b; font-size: 13px; }
+
+        /* ─── 토론방 ─── */
+        .room-screen {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 상단 바 */
+        .room-topbar {
+            background: linear-gradient(135deg, #1e293b, #1a1f3a);
+            padding: 14px 24px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .room-topic {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f1f5f9;
+            flex: 1;
+            margin-right: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .phase-badge {
+            background: #7c3aed;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 16px;
+            white-space: nowrap;
+        }
+
+        /* 3단 레이아웃 본문 */
+        .room-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 왼쪽/오른쪽 사이드 */
+        .side-column {
+            width: 200px;
+            background: #0a0f1a;
+            border-right: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px 16px;
+            gap: 8px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .side-column.right-side {
+            border-right: none;
+            border-left: 1px solid #1e293b;
+        }
+
+        .side-avatar-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 8px;
+            border-radius: 14px;
+            transition: all 0.35s ease;
+        }
+        .side-avatar-card.dimmed {
+            opacity: 0.55;
+            filter: brightness(0.75);
+        }
+        .side-avatar-card.active-speaker {
+            opacity: 1;
+            filter: brightness(1);
+            animation: speaker-pop 0.4s ease;
+        }
+        @keyframes speaker-pop {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .side-avatar-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            border: 4px solid transparent;
+            transition: all 0.35s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .side-avatar-circle.ai1-color {
+            background: linear-gradient(145deg, #f97316, #ea580c);
+        }
+        .side-avatar-circle.ai2-color {
+            background: linear-gradient(145deg, #22c55e, #16a34a);
+        }
+        .side-avatar-circle.participant-color {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+        }
+        .side-avatar-circle.speaking {
+            border-color: #4ade80;
+            box-shadow: 0 0 24px rgba(74, 222, 128, 0.55), 0 0 48px rgba(74, 222, 128, 0.2);
+            animation: glow-pulse 2s ease-in-out infinite;
+        }
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 24px rgba(74,222,128,0.55), 0 0 48px rgba(74,222,128,0.2); }
+            50% { box-shadow: 0 0 32px rgba(74,222,128,0.75), 0 0 64px rgba(74,222,128,0.35); }
+        }
+
+        .side-avatar-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e2e8f0;
+            text-align: center;
+        }
+        .side-avatar-role {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 160px;
+            line-height: 1.4;
+        }
+
+        .side-divider {
+            width: 80%;
+            height: 1px;
+            background: #1e293b;
+            margin: 12px 0;
+        }
+
+        /* 가운데 영역 */
+        .center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .timer {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #a78bfa;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* (아바타 영역은 side-column으로 대체됨) */
+
+        /* 채팅 영역 */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .chat-area::-webkit-scrollbar { width: 6px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            max-width: 75%;
+            animation: msg-slide-in 0.3s ease-out;
+        }
+        @keyframes msg-slide-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg-row.from-user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .msg-row.from-system {
+            align-self: center;
+            max-width: 90%;
+        }
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        .msg-body {}
+        .msg-sender {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .msg-time { font-size: 11px; color: #64748b; }
+        .msg-bubble {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #e2e8f0;
+        }
+        .msg-row.from-user .msg-bubble {
+            background: #1e3a5f;
+            border-color: #2563eb44;
+        }
+        .msg-row.from-user .msg-sender {
+            justify-content: flex-end;
+        }
+        .msg-row.from-system .msg-bubble {
+            background: #1a1a2e;
+            border: 1px dashed #475569;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* 타이핑 애니메이션 */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing-bounce 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing-bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* 입력 영역 */
+        .input-area {
+            background: #111827;
+            border-top: 1px solid #1e293b;
+            padding: 14px 24px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+        .input-textarea {
+            flex: 1;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            min-height: 44px;
+            line-height: 1.5;
+        }
+        .input-textarea:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.15); }
+        .input-textarea:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-send {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .btn-send:hover { background: #6d28d9; }
+        .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* 하단 툴바 */
+        .bottom-toolbar {
+            background: #0d1117;
+            border-top: 1px solid #1e293b;
+            padding: 10px 24px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .toolbar-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .toolbar-btn:hover { border-color: #7c3aed; background: #1e2040; color: #e2e8f0; }
+        .toolbar-btn.danger { border-color: #ef444466; color: #f87171; }
+        .toolbar-btn.danger:hover { background: #450a0a; border-color: #ef4444; }
+
+        /* 사이드 패널 */
+        .side-panel-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 900;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .side-panel-overlay.open { opacity: 1; pointer-events: auto; }
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            height: 100vh;
+            background: #111827;
+            border-left: 1px solid #334155;
+            z-index: 1000;
+            transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        .side-panel.open { right: 0; }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .panel-header h3 { font-size: 16px; color: #f1f5f9; }
+        .panel-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .panel-close:hover { color: #e2e8f0; }
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid #1e293b;
+        }
+        .panel-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #94a3b8;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-family: inherit;
+        }
+        .panel-tab.active { color: #a78bfa; border-bottom-color: #7c3aed; }
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+        .material-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .material-card h4 {
+            font-size: 14px;
+            color: #a78bfa;
+            margin-bottom: 8px;
+        }
+        .material-card p {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        /* ─── 평가 화면 ─── */
+        .eval-screen {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+        .eval-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .eval-header h2 { font-size: 24px; color: #f1f5f9; margin-bottom: 4px; }
+        .eval-header p { color: #94a3b8; font-size: 14px; }
+
+        /* 원형 게이지 */
+        .score-gauge {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 36px;
+        }
+        .gauge-wrap {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+        .gauge-wrap svg {
+            transform: rotate(-90deg);
+        }
+        .gauge-bg { fill: none; stroke: #1e293b; stroke-width: 12; }
+        .gauge-fill { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease-out; }
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .gauge-score { font-size: 36px; font-weight: 800; color: #f1f5f9; }
+        .gauge-max { font-size: 14px; color: #64748b; }
+
+        /* 역량 막대 */
+        .comp-bars { margin-bottom: 36px; }
+        .comp-bar-item {
+            margin-bottom: 14px;
+        }
+        .comp-bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .comp-bar-name { color: #cbd5e1; font-weight: 600; }
+        .comp-bar-score { color: #94a3b8; }
+        .comp-bar-track {
+            height: 10px;
+            background: #1e293b;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .comp-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease-out;
+        }
+        .comp-bar-desc {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        /* 강점/개발영역 카드 */
+        .eval-section-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 14px;
+            padding-left: 4px;
+        }
+        .eval-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 12px;
+        }
+        .eval-card h4 { font-size: 15px; color: #e2e8f0; margin-bottom: 6px; }
+        .eval-card .desc { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 8px; }
+        .eval-card .evidence {
+            background: #0f172a;
+            border-left: 3px solid #7c3aed;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        .eval-card .suggestion {
+            font-size: 13px;
+            color: #a78bfa;
+            line-height: 1.6;
+        }
+
+        /* 참여 통계 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+        .stat-box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat-value { font-size: 28px; font-weight: 800; color: #a78bfa; }
+        .stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+        .eval-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+        .eval-btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+        }
+        .eval-btn-primary { background: #7c3aed; color: white; }
+        .eval-btn-primary:hover { background: #6d28d9; }
+        .eval-btn-secondary { background: #334155; color: #e2e8f0; }
+        .eval-btn-secondary:hover { background: #475569; }
+
+        /* 확인 모달 */
+        .confirm-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-box {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 16px;
+            padding: 28px 32px;
+            width: 400px;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .confirm-box h3 { color: #f1f5f9; font-size: 18px; margin-bottom: 10px; }
+        .confirm-box p { color: #94a3b8; font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+        .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+        .confirm-btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .confirm-btn-cancel { background: #334155; color: #e2e8f0; }
+        .confirm-btn-ok { background: #ef4444; color: white; }
+        .confirm-btn-ok:hover { background: #dc2626; }
+
+        @media (max-width: 1024px) {
+            .side-panel { width: 320px; right: -340px; }
+            .side-column { width: 160px; padding: 20px 10px; }
+            .side-avatar-circle { width: 90px; height: 90px; font-size: 28px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .side-column { width: 72px; padding: 14px 6px; }
+            .side-avatar-circle { width: 56px; height: 56px; font-size: 20px; border-width: 3px; }
+            .side-avatar-name { font-size: 11px; }
+            .side-avatar-role { display: none; }
+            .side-divider { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ====== 1. 설정 화면 ====== -->
+<div id="setupScreen" class="setup-screen">
+    <a href="/" class="setup-back">&larr; DC Simulation Builder로 돌아가기</a>
+    <div class="setup-header">
+        <h1>AI <span class="accent">집단토론</span> 시뮬레이션</h1>
+        <p>AI 참가자 2명과 함께하는 역할 부여형 토론 연습</p>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">산업 분야</label>
+        <select id="selIndustry" class="form-select">
+            <option value="IT/소프트웨어">IT / 소프트웨어</option>
+            <option value="제조업">제조업</option>
+            <option value="금융">금융</option>
+            <option value="서비스업">서비스업</option>
+            <option value="공공기관">공공기관</option>
+            <option value="유통/물류">유통 / 물류</option>
+            <option value="바이오/제약">바이오 / 제약</option>
+            <option value="건설/부동산">건설 / 부동산</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">대상 직급</label>
+        <select id="selLevel" class="form-select">
+            <option value="과장">과장</option>
+            <option value="차장">차장</option>
+            <option value="부장">부장</option>
+            <option value="임원">임원</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">토론 유형</label>
+        <div class="type-cards">
+            <div class="type-card selected" data-type="자원배분형" onclick="selectType(this)">
+                <div class="tc-icon">&#x1F4B0;</div>
+                <div class="tc-title">자원배분형</div>
+                <div class="tc-desc">한정된 자원(예산, 인력)을 어떻게 배분할 것인지 토론</div>
+            </div>
+            <div class="type-card" data-type="정책결정형" onclick="selectType(this)">
+                <div class="tc-icon">&#x1F4DC;</div>
+                <div class="tc-title">정책결정형</div>
+                <div class="tc-desc">조직의 새로운 정책이나 제도 도입 여부를 결정</div>
+            </div>
+            <div class="type-card" data-type="위기대응형" onclick="selectType(this)">
+                <div class="tc-icon">&#x26A0;&#xFE0F;</div>
+                <div class="tc-title">위기대응형</div>
+                <div class="tc-desc">긴급 상황에 대한 대응 전략과 우선순위를 결정</div>
+            </div>
+            <div class="type-card" data-type="우선순위설정형" onclick="selectType(this)">
+                <div class="tc-icon">&#x1F4CA;</div>
+                <div class="tc-title">우선순위설정형</div>
+                <div class="tc-desc">여러 프로젝트/과제의 실행 우선순위를 결정</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">난이도</label>
+        <div class="difficulty-wrap">
+            <span style="font-size:12px;color:#64748b;">쉬움</span>
+            <input type="range" id="sliderDiff" class="difficulty-slider" min="1" max="5" value="3" oninput="document.getElementById('diffVal').textContent=this.value">
+            <span style="font-size:12px;color:#64748b;">어려움</span>
+            <div class="difficulty-value" id="diffVal">3</div>
+        </div>
+    </div>
+
+    <button class="btn-start" id="btnStart" onclick="startDiscussion()">토론 시작</button>
+</div>
+
+<!-- ====== 2. 로딩 화면 ====== -->
+<div id="loadingScreen" class="loading-screen hidden">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AI가 토론 시나리오를 생성 중입니다...</div>
+    <div class="loading-sub">산업 특성과 직급에 맞는 삼각 갈등 구조를 설계하고 있습니다</div>
+</div>
+
+<!-- ====== 3. 토론방 ====== -->
+<div id="roomScreen" class="room-screen hidden">
+    <!-- 상단 바 -->
+    <div class="room-topbar">
+        <div class="room-topic" id="roomTopic"></div>
+        <div class="phase-badge" id="phaseBadge">자료 숙지</div>
+        <div class="timer" id="timer">00:00</div>
+    </div>
+
+    <!-- 3단 레이아웃 -->
+    <div class="room-body">
+        <!-- 왼쪽: AI-1 + 참가자(나) -->
+        <div class="side-column left-side">
+            <div class="side-avatar-card dimmed" id="cardAi1">
+                <div class="side-avatar-circle ai1-color" id="avatarAi1" data-avatar-slot="ai1"></div>
+                <div class="side-avatar-name" id="nameAi1"></div>
+                <div class="side-avatar-role" id="roleAi1"></div>
+            </div>
+            <div class="side-divider"></div>
+            <div class="side-avatar-card dimmed" id="cardParticipant">
+                <div class="side-avatar-circle participant-color" id="avatarParticipant" data-avatar-slot="participant"></div>
+                <div class="side-avatar-name" id="nameParticipant"></div>
+                <div class="side-avatar-role" id="roleParticipant"></div>
+            </div>
+        </div>
+
+        <!-- 가운데: 채팅 + 입력 -->
+        <div class="center-area">
+            <div class="chat-area" id="chatArea"></div>
+            <div class="input-area">
+                <textarea id="msgInput" class="input-textarea" rows="1" placeholder="의견을 입력하세요... (Enter로 전송, Shift+Enter 줄바꿈)" disabled></textarea>
+                <button class="btn-send" id="btnSend" onclick="sendMessage()" disabled>&#x27A4;</button>
+            </div>
+        </div>
+
+        <!-- 오른쪽: AI-2 -->
+        <div class="side-column right-side">
+            <div class="side-avatar-card dimmed" id="cardAi2">
+                <div class="side-avatar-circle ai2-color" id="avatarAi2" data-avatar-slot="ai2"></div>
+                <div class="side-avatar-name" id="nameAi2"></div>
+                <div class="side-avatar-role" id="roleAi2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 툴바 -->
+    <div class="bottom-toolbar">
+        <button class="toolbar-btn" onclick="togglePanel()">&#x1F4CB; 자료 보기</button>
+        <button class="toolbar-btn" id="btnNextPhase" onclick="nextPhase()">&#x27A1;&#xFE0F; 다음 단계</button>
+        <button class="toolbar-btn danger" onclick="confirmEnd()">&#x1F3C1; 토론 종료 &amp; 평가</button>
+    </div>
+</div>
+
+<!-- 사이드 패널 -->
+<div class="side-panel-overlay" id="panelOverlay" onclick="togglePanel()"></div>
+<div class="side-panel" id="sidePanel">
+    <div class="panel-header">
+        <h3>토론 자료</h3>
+        <button class="panel-close" onclick="togglePanel()">&times;</button>
+    </div>
+    <div class="panel-tabs">
+        <button class="panel-tab active" onclick="switchTab('common', this)">공통 자료</button>
+        <button class="panel-tab" onclick="switchTab('private', this)">내 역할 자료</button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- ====== 4. 평가 화면 ====== -->
+<div id="evalScreen" class="eval-screen hidden">
+    <div class="eval-header">
+        <h2>토론 평가 결과</h2>
+        <p>AI가 분석한 당신의 토론 역량 리포트입니다</p>
+    </div>
+    <div id="evalContent"></div>
+    <div class="eval-actions">
+        <button class="eval-btn eval-btn-primary" onclick="resetAll()">새 토론 시작</button>
+        <button class="eval-btn eval-btn-secondary" onclick="location.href='/'">메인으로</button>
+    </div>
+</div>
+
+<!-- 확인 모달 -->
+<div id="confirmModal" class="confirm-overlay hidden">
+    <div class="confirm-box">
+        <h3>토론을 종료하시겠습니까?</h3>
+        <p>토론을 종료하면 AI가 전체 토론 내용을 분석하여 역량 평가 결과를 제공합니다.</p>
+        <div class="confirm-btns">
+            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirm()">취소</button>
+            <button class="confirm-btn confirm-btn-ok" onclick="endAndEvaluate()">종료 및 평가</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─── 상태 ───
+let session = null;
+let currentPhase = 'briefing';
+let timerInterval = null;
+let timerSeconds = 0;
+let panelOpen = false;
+let panelTab = 'common';
+let isSending = false;
+
+const PHASE_NAMES = {
+    briefing: '자료 숙지',
+    intro: '입장 발표',
+    discussion: '자유 토론',
+    consensus: '합의 도출',
+};
+const PHASE_ORDER = ['briefing', 'intro', 'discussion', 'consensus'];
+
+// ─── 설정 화면 ───
+function selectType(el) {
+    document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+// ─── 토론 시작 ───
+async function startDiscussion() {
+    const industry = document.getElementById('selIndustry').value;
+    const target_level = document.getElementById('selLevel').value;
+    const topic_type = document.querySelector('.type-card.selected')?.dataset.type || '자원배분형';
+    const difficulty = parseInt(document.getElementById('sliderDiff').value);
+
+    document.getElementById('setupScreen').classList.add('hidden');
+    document.getElementById('loadingScreen').classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/discussion/create-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ industry, target_level, topic_type, difficulty }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+
+        session = data.session;
+        initRoom();
+    } catch (e) {
+        alert('시나리오 생성에 실패했습니다: ' + e.message);
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('setupScreen').classList.remove('hidden');
+    }
+}
+
+// ─── 토론방 초기화 ───
+function initRoom() {
+    const sc = session.scenario;
+    const roles = sc.roles;
+
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('roomScreen').classList.remove('hidden');
+
+    // 상단
+    document.getElementById('roomTopic').textContent = sc.topic;
+    updatePhaseBadge('briefing');
+
+    // 아바타
+    const pName = roles.participant.name;
+    const a1Name = roles.ai_1.name;
+    const a2Name = roles.ai_2.name;
+    document.getElementById('avatarParticipant').textContent = pName.charAt(0);
+    document.getElementById('avatarAi1').textContent = a1Name.charAt(0);
+    document.getElementById('avatarAi2').textContent = a2Name.charAt(0);
+    document.getElementById('nameParticipant').textContent = pName + ' (나)';
+    document.getElementById('nameAi1').textContent = a1Name;
+    document.getElementById('nameAi2').textContent = a2Name;
+    document.getElementById('roleParticipant').textContent = roles.participant.department + ' ' + roles.participant.position;
+    document.getElementById('roleAi1').textContent = roles.ai_1.department + ' ' + roles.ai_1.position;
+    document.getElementById('roleAi2').textContent = roles.ai_2.department + ' ' + roles.ai_2.position;
+
+    // 시작 시스템 메시지
+    addSystemMessage('토론 시나리오가 준비되었습니다. 왼쪽 하단의 "자료 보기"를 눌러 공통 자료와 역할 자료를 숙지한 후 "다음 단계"를 눌러주세요.');
+
+    // 자료 패널 자동 열기
+    if (!panelOpen) togglePanel();
+    renderPanel();
+
+    // 타이머 시작
+    startTimer();
+
+    // 입력 비활성화 (briefing)
+    setInputEnabled(false);
+}
+
+// ─── 타이머 ───
+function startTimer() {
+    timerSeconds = 0;
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timerSeconds++;
+        const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        const s = String(timerSeconds % 60).padStart(2, '0');
+        document.getElementById('timer').textContent = m + ':' + s;
+    }, 1000);
+}
+
+// ─── 단계 관련 ───
+function updatePhaseBadge(phase) {
+    currentPhase = phase;
+    document.getElementById('phaseBadge').textContent = PHASE_NAMES[phase] || phase;
+}
+
+async function nextPhase() {
+    const idx = PHASE_ORDER.indexOf(currentPhase);
+    if (idx >= PHASE_ORDER.length - 1) return;
+    const next = PHASE_ORDER[idx + 1];
+
+    document.getElementById('btnNextPhase').disabled = true;
+
+    try {
+        const res = await fetch('/api/discussion/phase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: session.session_id, phase: next }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+
+        updatePhaseBadge(next);
+
+        // 추가된 메시지 렌더링
+        if (data.messages) {
+            for (const msg of data.messages) {
+                if (msg.sender === 'system') {
+                    addSystemMessage(msg.content);
+                } else {
+                    addAiMessage(msg);
+                }
+            }
+        }
+
+        // 입력 활성화 제어
+        if (next === 'intro') {
+            addSystemMessage('AI 참가자들이 입장을 발표했습니다. 이제 당신의 입장을 밝혀주세요.');
+            setInputEnabled(true);
+        } else if (next === 'discussion') {
+            setInputEnabled(true);
+        } else if (next === 'consensus') {
+            setInputEnabled(true);
+        }
+
+    } catch (e) {
+        alert('단계 전환 실패: ' + e.message);
+    } finally {
+        document.getElementById('btnNextPhase').disabled = false;
+    }
+}
+
+// ─── 입력 제어 ───
+function setInputEnabled(enabled) {
+    document.getElementById('msgInput').disabled = !enabled;
+    document.getElementById('btnSend').disabled = !enabled;
+    if (enabled) {
+        document.getElementById('msgInput').focus();
+    }
+}
+
+// ─── 메시지 전송 ───
+async function sendMessage() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content || isSending) return;
+
+    isSending = true;
+    setInputEnabled(false);
+
+    // 사용자 메시지 렌더
+    const pName = session.scenario.roles.participant.name;
+    addUserMessage(content, pName);
+    input.value = '';
+    autoResizeInput();
+
+    // 타이핑 표시
+    const typingId = showTyping();
+
+    try {
+        const res = await fetch('/api/discussion/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: session.session_id, content }),
+        });
+        const data = await res.json();
+        removeTyping(typingId);
+        if (!data.success) throw new Error(data.error);
+
+        // AI 응답 렌더
+        for (const aiMsg of data.ai_responses) {
+            addAiMessage(aiMsg);
+        }
+    } catch (e) {
+        removeTyping(typingId);
+        addSystemMessage('오류: ' + e.message);
+    } finally {
+        isSending = false;
+        if (currentPhase !== 'briefing') setInputEnabled(true);
+    }
+}
+
+// ─── 메시지 렌더링 ───
+function addUserMessage(content, name) {
+    const area = document.getElementById('chatArea');
+    const row = document.createElement('div');
+    row.className = 'msg-row from-user';
+    row.innerHTML = `
+        <div class="msg-avatar" style="background:#3b82f6;">${name.charAt(0)}</div>
+        <div class="msg-body">
+            <div class="msg-sender">${name} (나) <span class="msg-time">${nowTime()}</span></div>
+            <div class="msg-bubble">${escapeHtml(content)}</div>
+        </div>`;
+    area.appendChild(row);
+    scrollChat();
+    setSpeaking('participant');
+}
+
+function addAiMessage(msg) {
+    const area = document.getElementById('chatArea');
+    const row = document.createElement('div');
+    const isAi1 = msg.sender === 'ai_1';
+    const color = isAi1 ? '#f97316' : '#22c55e';
+    row.className = 'msg-row';
+    row.innerHTML = `
+        <div class="msg-avatar" style="background:${color};">${msg.sender_name.charAt(0)}</div>
+        <div class="msg-body">
+            <div class="msg-sender">${msg.sender_name} <span class="msg-time">${nowTime()}</span></div>
+            <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+        </div>`;
+    area.appendChild(row);
+    scrollChat();
+    setSpeaking(msg.sender);
+}
+
+function addSystemMessage(content) {
+    const area = document.getElementById('chatArea');
+    const row = document.createElement('div');
+    row.className = 'msg-row from-system';
+    row.innerHTML = `<div class="msg-body"><div class="msg-bubble">${escapeHtml(content)}</div></div>`;
+    area.appendChild(row);
+    scrollChat();
+}
+
+let typingCounter = 0;
+function showTyping() {
+    const area = document.getElementById('chatArea');
+    const id = 'typing-' + (++typingCounter);
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+    row.id = id;
+    row.innerHTML = `
+        <div class="msg-avatar" style="background:#475569;">?</div>
+        <div class="msg-body">
+            <div class="msg-sender">AI 응답 중...</div>
+            <div class="msg-bubble">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>`;
+    area.appendChild(row);
+    scrollChat();
+    return id;
+}
+
+function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function setSpeaking(sender) {
+    // 아바타 원형 글로우 제거
+    document.querySelectorAll('.side-avatar-circle').forEach(c => c.classList.remove('speaking'));
+    // 카드 dim/active 전환
+    document.querySelectorAll('.side-avatar-card').forEach(c => {
+        c.classList.add('dimmed');
+        c.classList.remove('active-speaker');
+    });
+
+    let avatarEl = null;
+    let cardEl = null;
+    if (sender === 'participant') {
+        avatarEl = document.getElementById('avatarParticipant');
+        cardEl = document.getElementById('cardParticipant');
+    } else if (sender === 'ai_1') {
+        avatarEl = document.getElementById('avatarAi1');
+        cardEl = document.getElementById('cardAi1');
+    } else if (sender === 'ai_2') {
+        avatarEl = document.getElementById('avatarAi2');
+        cardEl = document.getElementById('cardAi2');
+    }
+    if (avatarEl) avatarEl.classList.add('speaking');
+    if (cardEl) {
+        cardEl.classList.remove('dimmed');
+        cardEl.classList.add('active-speaker');
+    }
+}
+
+function scrollChat() {
+    const area = document.getElementById('chatArea');
+    requestAnimationFrame(() => { area.scrollTop = area.scrollHeight; });
+}
+
+function nowTime() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function escapeHtml(t) {
+    return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+}
+
+// ─── 사이드 패널 ───
+function togglePanel() {
+    panelOpen = !panelOpen;
+    document.getElementById('sidePanel').classList.toggle('open', panelOpen);
+    document.getElementById('panelOverlay').classList.toggle('open', panelOpen);
+    if (panelOpen) renderPanel();
+}
+
+function switchTab(tab, el) {
+    panelTab = tab;
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderPanel();
+}
+
+function renderPanel() {
+    const body = document.getElementById('panelBody');
+    if (!session) { body.innerHTML = ''; return; }
+    const sc = session.scenario;
+
+    if (panelTab === 'common') {
+        const mats = sc.common_materials || [];
+        body.innerHTML = mats.map(m =>
+            `<div class="material-card"><h4>${escapeHtml(m.title)}</h4><p>${escapeHtml(m.content)}</p></div>`
+        ).join('') || '<p style="color:#64748b;">공통 자료가 없습니다.</p>';
+    } else {
+        const role = sc.roles.participant;
+        let html = `<div class="material-card"><h4>나의 역할</h4><p><strong>${role.name}</strong> | ${role.department} ${role.position}</p><p>${escapeHtml(role.interest)}</p></div>`;
+        const mats = role.private_materials || [];
+        html += mats.map(m =>
+            `<div class="material-card"><h4>${escapeHtml(m.title)}</h4><p>${escapeHtml(m.content)}</p></div>`
+        ).join('');
+        body.innerHTML = html;
+    }
+}
+
+// ─── 종료 & 평가 ───
+function confirmEnd() {
+    document.getElementById('confirmModal').classList.remove('hidden');
+}
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+async function endAndEvaluate() {
+    closeConfirm();
+    if (timerInterval) clearInterval(timerInterval);
+    setInputEnabled(false);
+
+    // 로딩 표시
+    document.getElementById('roomScreen').classList.add('hidden');
+    document.getElementById('loadingScreen').classList.remove('hidden');
+    document.querySelector('#loadingScreen .loading-text').textContent = 'AI가 토론 내용을 분석하고 있습니다...';
+    document.querySelector('#loadingScreen .loading-sub').textContent = '역량별 평가와 피드백을 생성하고 있습니다';
+
+    try {
+        const res = await fetch('/api/discussion/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: session.session_id }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+
+        renderEvaluation(data.evaluation);
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('evalScreen').classList.remove('hidden');
+    } catch (e) {
+        alert('평가 실패: ' + e.message);
+        document.getElementById('loadingScreen').classList.add('hidden');
+        document.getElementById('roomScreen').classList.remove('hidden');
+    }
+}
+
+// ─── 평가 렌더링 ───
+function renderEvaluation(ev) {
+    const container = document.getElementById('evalContent');
+    const overall = ev.overall_score || 0;
+    const circumference = 2 * Math.PI * 68;
+    const offset = circumference * (1 - overall / 5);
+    const gaugeColor = overall >= 4 ? '#22c55e' : overall >= 3 ? '#eab308' : '#ef4444';
+
+    let html = '';
+
+    // 종합 점수 게이지
+    html += `
+    <div class="score-gauge">
+        <div class="gauge-wrap">
+            <svg width="160" height="160" viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="68"/>
+                <circle class="gauge-fill" cx="80" cy="80" r="68"
+                    stroke="${gaugeColor}"
+                    stroke-dasharray="${circumference}"
+                    stroke-dashoffset="${offset}"/>
+            </svg>
+            <div class="gauge-text">
+                <div class="gauge-score">${overall.toFixed(1)}</div>
+                <div class="gauge-max">/ 5.0</div>
+            </div>
+        </div>
+    </div>`;
+
+    // 참여 통계
+    const stats = ev.participation_stats || {};
+    html += `
+    <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value">${stats.total_messages || 0}</div><div class="stat-label">전체 발언 수</div></div>
+        <div class="stat-box"><div class="stat-value">${stats.user_messages || 0}</div><div class="stat-label">내 발언 수</div></div>
+        <div class="stat-box"><div class="stat-value">${stats.ai_messages || 0}</div><div class="stat-label">AI 발언 수</div></div>
+        <div class="stat-box"><div class="stat-value">${stats.avg_length || 0}</div><div class="stat-label">평균 글자 수</div></div>
+    </div>`;
+
+    // 역량별 점수
+    const comps = ev.competency_scores || {};
+    html += '<div class="comp-bars">';
+    for (const [name, info] of Object.entries(comps)) {
+        const score = info.score || 0;
+        const pct = (score / 5) * 100;
+        const barColor = score >= 4 ? '#22c55e' : score >= 3 ? '#eab308' : '#ef4444';
+        html += `
+        <div class="comp-bar-item">
+            <div class="comp-bar-label"><span class="comp-bar-name">${escapeHtml(name)}</span><span class="comp-bar-score">${score.toFixed(1)} / 5.0</span></div>
+            <div class="comp-bar-track"><div class="comp-bar-fill" style="width:${pct}%;background:${barColor};"></div></div>
+            <div class="comp-bar-desc">${escapeHtml(info.description || '')}</div>
+        </div>`;
+    }
+    html += '</div>';
+
+    // 강점
+    const strengths = ev.strengths || [];
+    if (strengths.length) {
+        html += '<div class="eval-section-title" style="color:#22c55e;">&#x2705; 강점</div>';
+        for (const s of strengths) {
+            html += `<div class="eval-card">
+                <h4>${escapeHtml(s.title)}</h4>
+                <div class="desc">${escapeHtml(s.description)}</div>
+                ${s.evidence ? `<div class="evidence">"${escapeHtml(s.evidence)}"</div>` : ''}
+            </div>`;
+        }
+    }
+
+    // 개발 영역
+    const areas = ev.development_areas || [];
+    if (areas.length) {
+        html += '<div class="eval-section-title" style="color:#f59e0b;">&#x1F4A1; 개발 영역</div>';
+        for (const a of areas) {
+            html += `<div class="eval-card">
+                <h4>${escapeHtml(a.title)}</h4>
+                <div class="desc">${escapeHtml(a.description)}</div>
+                ${a.evidence ? `<div class="evidence">"${escapeHtml(a.evidence)}"</div>` : ''}
+                ${a.suggestion ? `<div class="suggestion">&#x1F4CC; ${escapeHtml(a.suggestion)}</div>` : ''}
+            </div>`;
+        }
+    }
+
+    container.innerHTML = html;
+}
+
+// ─── 리셋 ───
+function resetAll() {
+    session = null;
+    currentPhase = 'briefing';
+    if (timerInterval) clearInterval(timerInterval);
+    timerSeconds = 0;
+    panelOpen = false;
+    isSending = false;
+
+    document.getElementById('chatArea').innerHTML = '';
+    document.getElementById('evalScreen').classList.add('hidden');
+    document.getElementById('roomScreen').classList.add('hidden');
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    document.getElementById('sidePanel').classList.remove('open');
+    document.getElementById('panelOverlay').classList.remove('open');
+    document.getElementById('timer').textContent = '00:00';
+}
+
+// ─── 입력 처리 ───
+const msgInput = document.getElementById('msgInput');
+msgInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+msgInput.addEventListener('input', autoResizeInput);
+function autoResizeInput() {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+}
+</script>
+</body>
+</html>
