@@ -2,7 +2,20 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env를 프로젝트 루트(backend/ 상위)와 backend/ 양쪽에서 탐색
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_backend_dir)
+
+# 프로젝트 루트의 .env 우선, 없으면 backend/.env
+for _env_path in [
+    os.path.join(_project_root, '.env'),
+    os.path.join(_backend_dir, '.env'),
+]:
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path)
+        break
+else:
+    load_dotenv()  # 기본 탐색 폴백
 
 class Config:
     """기본 설정"""

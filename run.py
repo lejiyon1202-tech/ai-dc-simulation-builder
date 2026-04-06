@@ -9,9 +9,14 @@ backend/ 앱 팩토리를 사용하여 단일 진입점으로 실행합니다.
 
 import os
 import sys
+from dotenv import load_dotenv
+
+# 프로젝트 루트의 .env를 먼저 로드 (config.py import 전에)
+_root = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_root, '.env'))
 
 # backend 패키지를 import 경로에 추가
-backend_path = os.path.join(os.path.dirname(__file__), 'backend')
+backend_path = os.path.join(_root, 'backend')
 sys.path.insert(0, backend_path)
 
 from app import create_app, db
