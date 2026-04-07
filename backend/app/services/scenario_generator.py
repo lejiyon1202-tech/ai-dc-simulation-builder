@@ -25,7 +25,7 @@ class ScenarioGenerator:
             if not api_key:
                 print("[ScenarioGenerator] ERROR: ANTHROPIC_API_KEY not set")
                 raise ValueError("ANTHROPIC_API_KEY가 설정되지 않았습니다.")
-            print(f"[ScenarioGenerator] API key loaded (len={len(api_key)}, prefix={api_key[:10]}...)")
+            print(f"[ScenarioGenerator] API key loaded (len={len(api_key)})")
             self.client = anthropic.Anthropic(api_key=api_key)
             self.model = current_app.config.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 

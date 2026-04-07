@@ -57,12 +57,10 @@ def create_unified_app():
     # ─── 헬스체크 (기존 호환) ───
     @app.route('/api/health')
     def api_health():
-        api_key = app.config.get('ANTHROPIC_API_KEY', '')
         return {
             'status': 'ok',
             'service': 'dc-simulation-builder',
-            'claude_api': bool(api_key),
-            'claude_key_prefix': api_key[:10] + '...' if api_key else 'NOT SET',
+            'claude_api': bool(app.config.get('ANTHROPIC_API_KEY')),
         }, 200
 
     return app
